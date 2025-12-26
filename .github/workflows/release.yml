@@ -21,9 +21,24 @@ jobs:
       with:
         go-version: 1.24.0
 
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
     - name: Get version from tag
       id: version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION_NO_V=${VERSION#v}" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Install dependencies
+      run: go mod download
 
     - name: Run tests
       run: |
@@ -33,69 +48,145 @@ jobs:
     - name: Build binaries
       env:
         VERSION: ${{ steps.version.outputs.VERSION }}
+        VERSION_NO_V: ${{ steps.version.outputs.VERSION_NO_V }}
       run: |
         mkdir -p dist
         
-        # Set version in build
-        LDFLAGS="-s -w -X main.version=${VERSION}"
+        # Set version in build (inject into main.version variable)
+        LDFLAGS="-s -w -X main.version=${VERSION_NO_V}"
+        
+        echo "Building with LDFLAGS: $LDFLAGS"
         
         # Linux
+        echo "Building Linux AMD64..."
         GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-amd64 .
+        echo "Building Linux ARM64..."
         GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-arm64 .
         
         # macOS
+        echo "Building macOS AMD64..."
         GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-amd64 .
+        echo "Building macOS ARM64..."
         GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-arm64 .
         
         # Windows
+        echo "Building Windows AMD64..."
         GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-windows-amd64.exe .
+        
+        # Verify builds
+        echo "Built files:"
+        ls -la dist/
+
+    - name: Test binaries
+      run: |
+        echo "Testing Linux binary..."
+        ./dist/deadman-go-linux-amd64 -version
+        echo "Testing macOS binary..."
+        ./dist/deadman-go-darwin-amd64 -version
 
     - name: Create checksums
       run: |
         cd dist
         sha256sum * > checksums.txt
-        echo "## Checksums" >> ../release_notes.md
-        echo '```' >> ../release_notes.md
-        cat checksums.txt >> ../release_notes.md
-        echo '```' >> ../release_notes.md
+        echo "Checksums created:"
+        cat checksums.txt
 
     - name: Create release notes
+      env:
+        VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
-        echo "# deadman-go ${{ steps.version.outputs.VERSION }}" > release_notes.md
-        echo "" >> release_notes.md
-        echo "## Installation" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "Download the appropriate binary for your platform:" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### Linux" >> release_notes.md
-        echo '```bash' >> release_notes.md
-        echo "# AMD64" >> release_notes.md
-        echo "wget https://github.com/doridoridoriand/deadman-go/releases/download/${{ steps.version.outputs.VERSION }}/deadman-go-linux-amd64" >> release_notes.md
-        echo "chmod +x deadman-go-linux-amd64" >> release_notes.md
-        echo "sudo mv deadman-go-linux-amd64 /usr/local/bin/deadman-go" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "# ARM64" >> release_notes.md
-        echo "wget https://github.com/doridoridoriand/deadman-go/releases/download/${{ steps.version.outputs.VERSION }}/deadman-go-linux-arm64" >> release_notes.md
-        echo "chmod +x deadman-go-linux-arm64" >> release_notes.md
-        echo "sudo mv deadman-go-linux-arm64 /usr/local/bin/deadman-go" >> release_notes.md
-        echo '```' >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### macOS" >> release_notes.md
-        echo '```bash' >> release_notes.md
-        echo "# Intel Mac" >> release_notes.md
-        echo "wget https://github.com/doridoridoriand/deadman-go/releases/download/${{ steps.version.outputs.VERSION }}/deadman-go-darwin-amd64" >> release_notes.md
-        echo "chmod +x deadman-go-darwin-amd64" >> release_notes.md
-        echo "sudo mv deadman-go-darwin-amd64 /usr/local/bin/deadman-go" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "# Apple Silicon Mac" >> release_notes.md
-        echo "wget https://github.com/doridoridoriand/deadman-go/releases/download/${{ steps.version.outputs.VERSION }}/deadman-go-darwin-arm64" >> release_notes.md
-        echo "chmod +x deadman-go-darwin-arm64" >> release_notes.md
-        echo "sudo mv deadman-go-darwin-arm64 /usr/local/bin/deadman-go" >> release_notes.md
-        echo '```' >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### Windows" >> release_notes.md
-        echo "Download \`deadman-go-windows-amd64.exe\` and rename to \`deadman-go.exe\`" >> release_notes.md
-        echo "" >> release_notes.md
+        cat > release_notes.md << EOF
+        # deadman-go ${VERSION}
+        
+        A Go implementation of the deadman ping monitoring tool, providing efficient host status monitoring with a terminal-based interface.
+        
+        ## What's New in ${VERSION}
+        
+        $(if [ "${VERSION}" = "v0.0.1" ]; then
+          echo "🎉 **Initial Release**"
+          echo ""
+          echo "- Go implementation of deadman ping monitoring tool"
+          echo "- Configuration compatibility with original deadman"
+          echo "- Terminal UI with real-time status display and RTT bar graphs"
+          echo "- Concurrent ping monitoring with configurable limits"
+          echo "- Prometheus metrics export support"
+          echo "- Cross-platform support (Linux, macOS, Windows)"
+          echo "- Single binary distribution with no dependencies"
+        else
+          echo "See [CHANGELOG.md](https://github.com/doridoridoriand/deadman-go/blob/main/CHANGELOG.md) for detailed changes."
+        fi)
+        
+        ## Installation
+        
+        ### Quick Install (Linux/macOS)
+        
+        \`\`\`bash
+        # Linux AMD64
+        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-linux-amd64 -o deadman-go
+        chmod +x deadman-go
+        sudo mv deadman-go /usr/local/bin/
+        
+        # macOS (Intel)
+        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-darwin-amd64 -o deadman-go
+        chmod +x deadman-go
+        sudo mv deadman-go /usr/local/bin/
+        
+        # macOS (Apple Silicon)
+        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-darwin-arm64 -o deadman-go
+        chmod +x deadman-go
+        sudo mv deadman-go /usr/local/bin/
+        \`\`\`
+        
+        ### Manual Download
+        
+        Download the appropriate binary for your platform from the assets below:
+        
+        | Platform | Architecture | Binary |
+        |----------|-------------|---------|
+        | Linux | AMD64 | \`deadman-go-linux-amd64\` |
+        | Linux | ARM64 | \`deadman-go-linux-arm64\` |
+        | macOS | Intel | \`deadman-go-darwin-amd64\` |
+        | macOS | Apple Silicon | \`deadman-go-darwin-arm64\` |
+        | Windows | AMD64 | \`deadman-go-windows-amd64.exe\` |
+        
+        ### Verify Installation
+        
+        \`\`\`bash
+        deadman-go -version
+        \`\`\`
+        
+        ## Quick Start
+        
+        1. Create a configuration file:
+        \`\`\`conf
+        # deadman-go: interval=2s timeout=1s max_concurrency=50
+        google 8.8.8.8
+        cloudflare 1.1.1.1
+        ---
+        router 192.168.1.1
+        \`\`\`
+        
+        2. Run deadman-go:
+        \`\`\`bash
+        deadman-go config.conf
+        \`\`\`
+        
+        ## Documentation
+        
+        - [README](https://github.com/doridoridoriand/deadman-go/blob/main/README.md) - Complete documentation
+        - [Configuration Guide](https://github.com/doridoridoriand/deadman-go/blob/main/README.md#configuration-reference) - Detailed configuration options
+        - [Contributing](https://github.com/doridoridoriand/deadman-go/blob/main/CONTRIBUTING.md) - How to contribute
+        
+        ## Checksums
+        
+        \`\`\`
+        $(cat dist/checksums.txt)
+        \`\`\`
+        
+        ---
+        
+        **Note**: This project is inspired by and maintains compatibility with the original [deadman](https://github.com/upa/deadman) tool by [upa](https://github.com/upa).
+        EOF
 
     - name: Create release
       uses: softprops/action-gh-release@v2
@@ -106,5 +197,13 @@ jobs:
         draft: false
         prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}
         make_latest: true
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: "deadman-go ${{ steps.version.outputs.VERSION }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Summary
+      run: |
+        echo "🎉 Release ${{ steps.version.outputs.VERSION }} created successfully!"
+        echo "📦 Binaries built for Linux, macOS, and Windows"
+        echo "🔗 Release URL: https://github.com/doridoridoriand/deadman-go/releases/tag/${{ steps.version.outputs.VERSION }}"
