@@ -48,25 +48,10 @@ echo "🔀 Switching to main branch..."
 git checkout main
 git pull origin main
 
-# Update version in main.go
-echo "📝 Updating version in main.go"
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    sed -i '' "s/const version = \".*\"/const version = \"${VERSION#v}\"/" main.go
-else
-    # Linux
-    sed -i "s/const version = \".*\"/const version = \"${VERSION#v}\"/" main.go
-fi
-
-# Show the version change
-echo "📋 Version updated:"
-grep "const version" main.go
-
 # Run tests
 echo "🧪 Running tests"
 if ! make test-all; then
     echo "❌ Tests failed. Aborting release."
-    git checkout -- main.go
     exit 1
 fi
 
@@ -74,7 +59,6 @@ fi
 echo "🔨 Building to verify"
 if ! make build; then
     echo "❌ Build failed. Aborting release."
-    git checkout -- main.go
     exit 1
 fi
 
@@ -82,18 +66,8 @@ fi
 echo "🔍 Testing built binary"
 if ! ./bin/deadman-go -version; then
     echo "❌ Binary test failed. Aborting release."
-    git checkout -- main.go
     exit 1
 fi
-
-# Show changes
-echo "📋 Changes to be committed:"
-git diff --name-only
-
-# Commit version update
-echo "💾 Committing version update"
-git add main.go
-git commit -m "Release $VERSION"
 
 # Create annotated tag
 echo "🏷️  Creating tag $VERSION"
@@ -117,12 +91,18 @@ else
 See CHANGELOG.md for detailed changes."
 fi
 
-git tag -a "$VERSION" -m "$TAG_MESSAGE"
+if ! git tag -a "$VERSION" -m "$TAG_MESSAGE"; then
+    echo "❌ Tag creation failed."
+    exit 1
+fi
 
-# Push changes and tag
-echo "📤 Pushing changes and tag"
-git push origin main
-git push origin "$VERSION"
+# Push tag
+echo "📤 Pushing tag $VERSION"
+if ! git push origin "$VERSION"; then
+    echo "❌ Tag push failed. Rolling back local tag."
+    git tag -d "$VERSION"
+    exit 1
+fi
 
 echo ""
 echo "✅ Release $VERSION has been created!"

@@ -36,8 +36,11 @@ echo "📍 Current branch: $CURRENT_BRANCH"
 if [ "$CURRENT_BRANCH" != "main" ]; then
     echo "🔀 Switching to main branch..."
     git checkout main
-    git pull origin main
 fi
+
+# Always pull latest changes
+echo "🔄 Pulling latest changes..."
+git pull origin main
 
 # Create tag
 echo "🏷️  Creating tag $VERSION"
