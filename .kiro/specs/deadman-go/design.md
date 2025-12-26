@@ -24,8 +24,8 @@ deadman-go は、既存の Python 製 deadman ツールを Go 言語で再実装
                                 ▼                        │
 ┌─────────────────┐    ┌─────────────────┐              │
 │   TUI           │    │   Ping Engine   │              │
-│   (bubbletea)   │◀───│   (ICMP)        │──────────────┘
-│                 │    │                 │
+│   (tcell)       │◀───│   (ICMP +       │──────────────┘
+│                 │    │    Fallback)    │
 └─────────────────┘    └─────────────────┘
 ```
 
@@ -33,9 +33,9 @@ deadman-go は、既存の Python 製 deadman ツールを Go 言語で再実装
 
 1. **Config Parser**: deadman.conf ファイルを解析し、ターゲット定義とグローバル設定を抽出
 2. **Scheduler**: 各ターゲットの監視 goroutine を管理し、並列度を制御
-3. **Ping Engine**: ICMP echo request/reply を処理し、RTT を計測
+3. **Ping Engine**: ICMP echo request/reply を処理し、RTT を計測。権限エラー時は外部コマンドにフォールバック
 4. **State Store**: 各ターゲットの状態（RTT、成功/失敗履歴、ステータス）を管理
-5. **TUI**: リアルタイムで監視状態を表示するターミナルインターフェース
+5. **TUI**: リアルタイムで監視状態を表示するターミナルインターフェース（tcellライブラリ使用）
 
 ## コンポーネントと インターフェース
 
@@ -46,6 +46,8 @@ type GlobalOptions struct {
     Interval       time.Duration // ping 間隔
     Timeout        time.Duration // ping タイムアウト
     MaxConcurrency int           // 同時 ping 数上限
+    MetricsMode    MetricsMode   // メトリクス出力モード
+    MetricsListen  string        // メトリクス待受アドレス
     UIScale        int           // RTT バーのスケール (ms)
     UIDisable      bool          // TUI 無効フラグ
 }
@@ -62,7 +64,16 @@ type Config struct {
     Global  GlobalOptions
 }
 
-type ConfigParser interface {
+type CLIOverrides struct {
+    Interval       *time.Duration
+    Timeout        *time.Duration
+    MaxConcurrency *int
+    MetricsMode    *MetricsMode
+    MetricsListen  *string
+    UIDisable      *bool
+}
+
+type Parser interface {
     LoadConfig(path string, overrides CLIOverrides) (*Config, error)
     ParseDeadmanGoDirective(line string) (map[string]string, error)
     ParseTargetLine(line string, group string) (TargetConfig, error)
@@ -72,18 +83,24 @@ type ConfigParser interface {
 ### Ping Engine
 
 ```go
-type PingResult struct {
+type Result struct {
     RTT     time.Duration
     Success bool
     Error   error
 }
 
 type Pinger interface {
-    Ping(ctx context.Context, addr string, timeout time.Duration) PingResult
+    Ping(ctx context.Context, addr string, timeout time.Duration) Result
 }
 
 type ICMPPinger struct {
-    conn *icmp.PacketConn
+    id  int
+    seq uint32
+}
+
+type FallbackPinger struct {
+    primary   Pinger
+    secondary Pinger
 }
 ```
 
@@ -99,6 +116,11 @@ const (
     StatusDown    Status = "DOWN"
 )
 
+type RTTPoint struct {
+    Time time.Time
+    RTT  time.Duration
+}
+
 type TargetStatus struct {
     Name          string
     Address       string
@@ -112,11 +134,19 @@ type TargetStatus struct {
     History       []RTTPoint
 }
 
-type StateStore interface {
-    UpdateResult(name string, result PingResult)
+type Store interface {
+    UpdateResult(name string, result Result)
     GetSnapshot() []TargetStatus
     UpdateTargets(targets []TargetConfig)
     GetTargetStatus(name string) (TargetStatus, bool)
+}
+
+type StoreImpl struct {
+    mu            sync.RWMutex
+    targets       map[string]*TargetStatus
+    historySize   int
+    downThreshold int
+    timeout       time.Duration
 }
 ```
 
@@ -129,12 +159,17 @@ type Scheduler interface {
     Stop()
 }
 
-type SchedulerImpl struct {
+type Impl struct {
+    mu         sync.RWMutex
     cfg        GlobalOptions
+    targets    map[string]TargetConfig
     pinger     Pinger
-    state      StateStore
-    semaphore  chan struct{} // 並列度制御
+    state      Store
+    semaphore  chan struct{}
     targetJobs map[string]context.CancelFunc
+    wg         sync.WaitGroup
+    cancel     context.CancelFunc
+    runCtx     context.Context
 }
 ```
 
@@ -143,7 +178,7 @@ type SchedulerImpl struct {
 ### ターゲット状態の遷移
 
 ```
-UNKNOWN ──ping success──▶ OK
+UNKNOWN ──ping success──▶ OK/WARN (RTTに基づく)
    │                      │
    │                      │ consecutive failures > threshold
    │                      ▼
@@ -152,6 +187,10 @@ UNKNOWN ──ping success──▶ OK
                        │                        │
                        └──ping success──────────┘
 ```
+
+状態判定ロジック：
+- **成功時**: RTTがtimeoutの25%以内 → OK、50%以内 → WARN、50%超 → WARN
+- **失敗時**: 連続失敗回数が閾値（デフォルト3回）未満 → WARN、以上 → DOWN
 
 ### RTT 履歴管理
 
@@ -163,17 +202,14 @@ type RTTPoint struct {
     RTT  time.Duration
 }
 
-type RTTHistory struct {
-    Points   []RTTPoint
-    MaxSize  int
-    Current  int // リングバッファのインデックス
-}
+// RTT履歴はTargetStatus内のHistoryフィールドで管理
+// リングバッファではなく、スライスによる実装
 ```
 
 ### 設定ファイル構造
 
 ```
-# deadman-go: interval=1s timeout=1s max_concurrency=100
+# deadman-go: interval=1s timeout=1s max_concurrency=100 ui.scale=10
 
 google      216.58.197.174
 googleDNS   8.8.8.8
@@ -181,6 +217,15 @@ googleDNS   8.8.8.8
 kame        203.178.141.194
 kame6       2001:200:dff:fff1:216:3eff:feb1:44d7
 ```
+
+サポートされるディレクティブ：
+- `interval`: ping間隔
+- `timeout`: pingタイムアウト
+- `max_concurrency`: 最大並列数
+- `metrics.mode`: メトリクスモード (per-target|aggregated|both)
+- `metrics.listen`: メトリクス待受アドレス
+- `ui.scale`: RTTバーのスケール (ms)
+- `ui.disable`: TUI無効化
 
 ## 正確性プロパティ
 
@@ -212,7 +257,7 @@ kame6       2001:200:dff:fff1:216:3eff:feb1:44d7
 **検証対象: 要件 1.5**
 
 **プロパティ 5: ping 結果の状態更新**
-*任意の* ping 結果（成功または失敗）に対して、StateStore は RTT の記録、失敗カウントの更新、状態遷移を正しく実行する
+*任意の* ping 結果（成功または失敗）に対して、StateStore は RTT の記録、失敗カウントの更新、状態遷移を正しく実行する。成功時はRTTに基づいてOK/WARNを判定し（timeout の25%以内でOK、50%以内でWARN、50%超でもWARN）、失敗時は連続失敗回数に基づいてWARN/DOWNを判定する
 **検証対象: 要件 2.2, 2.3, 2.4**
 
 **プロパティ 6: タイムアウト処理**
