@@ -56,7 +56,7 @@ func TestPropertySchedulerConcurrencyLimit(t *testing.T) {
 			targets := make([]config.TargetConfig, targetCount)
 			for i := 0; i < targetCount; i++ {
 				targets[i] = config.TargetConfig{
-					Name:    string(rune('a' + i)),
+					Name:    fmt.Sprintf("target-%d", i+1),
 					Address: fmt.Sprintf("192.0.2.%d", i+1),
 				}
 			}
