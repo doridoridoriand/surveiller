@@ -49,6 +49,7 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.VERSION }}
         VERSION_NO_V: ${{ steps.version.outputs.VERSION_NO_V }}
+        CGO_ENABLED: 0
       run: |
         mkdir -p dist
         
@@ -56,6 +57,7 @@ jobs:
         LDFLAGS="-s -w -X main.version=${VERSION_NO_V}"
         
         echo "Building with LDFLAGS: $LDFLAGS"
+        echo "CGO_ENABLED: $CGO_ENABLED"
         
         # Linux
         echo "Building Linux AMD64..."
@@ -76,6 +78,10 @@ jobs:
         # Verify builds
         echo "Built files:"
         ls -la dist/
+        
+        # Verify file types
+        echo "File types:"
+        file dist/*
 
     - name: Test binaries
       run: |
