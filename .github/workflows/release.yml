@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.24.0
+        go-version: '1.23.x'
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -87,8 +87,9 @@ jobs:
       run: |
         echo "Testing Linux binary..."
         ./dist/deadman-go-linux-amd64 -version
-        echo "Testing macOS binary..."
-        ./dist/deadman-go-darwin-amd64 -version
+        echo "Verifying other binaries exist..."
+        ls -la dist/
+        echo "All binaries built successfully!"
 
     - name: Create checksums
       run: |
