@@ -22,16 +22,9 @@ fi
 
 echo "🚀 Preparing release $VERSION"
 
-# Check if we're on main branch
+# Get current branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "initial-develop" ]; then
-    echo "⚠️  Warning: You're not on the main or initial-develop branch (current: $CURRENT_BRANCH)"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
-fi
+echo "📍 Current branch: $CURRENT_BRANCH"
 
 # Check if working directory is clean
 if [ -n "$(git status --porcelain)" ]; then
@@ -46,25 +39,55 @@ if git rev-parse "$VERSION" >/dev/null 2>&1; then
     exit 1
 fi
 
+# Check if we have the latest changes
+echo "🔄 Fetching latest changes..."
+git fetch origin
+
+# Switch to main branch and ensure it's up to date
+echo "🔀 Switching to main branch..."
+git checkout main
+git pull origin main
+
 # Update version in main.go
 echo "📝 Updating version in main.go"
-sed -i.bak "s/const version = \".*\"/const version = \"${VERSION#v}\"/" main.go
-rm main.go.bak
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    sed -i '' "s/const version = \".*\"/const version = \"${VERSION#v}\"/" main.go
+else
+    # Linux
+    sed -i "s/const version = \".*\"/const version = \"${VERSION#v}\"/" main.go
+fi
+
+# Show the version change
+echo "📋 Version updated:"
+grep "const version" main.go
 
 # Run tests
 echo "🧪 Running tests"
-make test-all
+if ! make test-all; then
+    echo "❌ Tests failed. Aborting release."
+    git checkout -- main.go
+    exit 1
+fi
 
 # Build to verify
 echo "🔨 Building to verify"
-make build
+if ! make build; then
+    echo "❌ Build failed. Aborting release."
+    git checkout -- main.go
+    exit 1
+fi
 
 # Test the built binary
-echo "� Testieng built binary"
-./bin/deadman-go -version
+echo "🔍 Testing built binary"
+if ! ./bin/deadman-go -version; then
+    echo "❌ Binary test failed. Aborting release."
+    git checkout -- main.go
+    exit 1
+fi
 
 # Show changes
-echo "� Chaniges to be committed:"
+echo "📋 Changes to be committed:"
 git diff --name-only
 
 # Commit version update
@@ -72,31 +95,44 @@ echo "💾 Committing version update"
 git add main.go
 git commit -m "Release $VERSION"
 
-# Create and push tag
+# Create annotated tag
 echo "🏷️  Creating tag $VERSION"
-git tag -a "$VERSION" -m "Release $VERSION
+if [ "$VERSION" = "v0.0.1" ]; then
+    TAG_MESSAGE="Release $VERSION
 
-$(if [ "$VERSION" = "v0.0.1" ]; then
-    echo "🎉 Initial release of deadman-go"
-    echo ""
-    echo "Features:"
-    echo "- Go implementation of deadman ping monitoring"
-    echo "- Configuration compatibility with original deadman"
-    echo "- Terminal UI with real-time status display"
-    echo "- Concurrent monitoring with configurable limits"
-    echo "- Prometheus metrics support"
-    echo "- Cross-platform binaries (Linux, macOS, Windows)"
+🎉 Initial release of deadman-go
+
+Features:
+- Go implementation of deadman ping monitoring
+- Configuration compatibility with original deadman
+- Terminal UI with real-time status display
+- Concurrent monitoring with configurable limits
+- Prometheus metrics support
+- Cross-platform binaries (Linux, macOS, Windows)
+
+This project is inspired by and maintains compatibility with the original deadman tool by upa."
 else
-    echo "See CHANGELOG.md for detailed changes."
-fi)"
+    TAG_MESSAGE="Release $VERSION
 
+See CHANGELOG.md for detailed changes."
+fi
+
+git tag -a "$VERSION" -m "$TAG_MESSAGE"
+
+# Push changes and tag
 echo "📤 Pushing changes and tag"
-git push origin $CURRENT_BRANCH
+git push origin main
 git push origin "$VERSION"
 
+echo ""
 echo "✅ Release $VERSION has been created!"
 echo "🔗 Check the release at: https://github.com/doridoridoriand/deadman-go/releases/tag/$VERSION"
 echo "⏳ GitHub Actions will build and publish the binaries automatically."
 echo ""
 echo "📊 You can monitor the build progress at:"
 echo "   https://github.com/doridoridoriand/deadman-go/actions"
+echo ""
+echo "🔄 Returning to original branch: $CURRENT_BRANCH"
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    git checkout "$CURRENT_BRANCH"
+fi
