@@ -1,0 +1,90 @@
+name: Test Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_version:
+        description: 'Test version (e.g., v0.0.1-test)'
+        required: true
+        default: 'v0.0.1-test'
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.24.0
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: |
+        make test
+        make test-prop
+
+    - name: Test build for all platforms
+      env:
+        VERSION: ${{ github.event.inputs.test_version }}
+      run: |
+        mkdir -p dist
+        
+        # Set version in build
+        LDFLAGS="-s -w -X main.version=${VERSION#v}"
+        
+        echo "Testing build with LDFLAGS: $LDFLAGS"
+        
+        # Linux
+        echo "Building Linux AMD64..."
+        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-amd64 .
+        echo "Building Linux ARM64..."
+        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-arm64 .
+        
+        # macOS
+        echo "Building macOS AMD64..."
+        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-amd64 .
+        echo "Building macOS ARM64..."
+        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-arm64 .
+        
+        # Windows
+        echo "Building Windows AMD64..."
+        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-windows-amd64.exe .
+        
+        echo "All builds completed successfully!"
+        ls -la dist/
+
+    - name: Test binary version
+      run: |
+        echo "Testing Linux binary version..."
+        ./dist/deadman-go-linux-amd64 -version
+        echo "Testing macOS binary version..."
+        ./dist/deadman-go-darwin-amd64 -version
+
+    - name: Create test checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.txt
+        echo "Test checksums:"
+        cat checksums.txt
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-binaries-${{ github.event.inputs.test_version }}
+        path: dist/
+        retention-days: 1

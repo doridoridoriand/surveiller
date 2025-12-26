@@ -24,8 +24,8 @@ echo "🚀 Preparing release $VERSION"
 
 # Check if we're on main branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "⚠️  Warning: You're not on the main branch (current: $CURRENT_BRANCH)"
+if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "initial-develop" ]; then
+    echo "⚠️  Warning: You're not on the main or initial-develop branch (current: $CURRENT_BRANCH)"
     read -p "Continue anyway? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -59,8 +59,12 @@ make test-all
 echo "🔨 Building to verify"
 make build
 
+# Test the built binary
+echo "� Testieng built binary"
+./bin/deadman-go -version
+
 # Show changes
-echo "📋 Changes to be committed:"
+echo "� Chaniges to be committed:"
 git diff --name-only
 
 # Commit version update
@@ -70,12 +74,29 @@ git commit -m "Release $VERSION"
 
 # Create and push tag
 echo "🏷️  Creating tag $VERSION"
-git tag -a "$VERSION" -m "Release $VERSION"
+git tag -a "$VERSION" -m "Release $VERSION
+
+$(if [ "$VERSION" = "v0.0.1" ]; then
+    echo "🎉 Initial release of deadman-go"
+    echo ""
+    echo "Features:"
+    echo "- Go implementation of deadman ping monitoring"
+    echo "- Configuration compatibility with original deadman"
+    echo "- Terminal UI with real-time status display"
+    echo "- Concurrent monitoring with configurable limits"
+    echo "- Prometheus metrics support"
+    echo "- Cross-platform binaries (Linux, macOS, Windows)"
+else
+    echo "See CHANGELOG.md for detailed changes."
+fi)"
 
 echo "📤 Pushing changes and tag"
-git push origin main
+git push origin $CURRENT_BRANCH
 git push origin "$VERSION"
 
 echo "✅ Release $VERSION has been created!"
 echo "🔗 Check the release at: https://github.com/doridoridoriand/deadman-go/releases/tag/$VERSION"
 echo "⏳ GitHub Actions will build and publish the binaries automatically."
+echo ""
+echo "📊 You can monitor the build progress at:"
+echo "   https://github.com/doridoridoriand/deadman-go/actions"
