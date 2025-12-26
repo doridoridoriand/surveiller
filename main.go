@@ -21,7 +21,7 @@ import (
 	"github.com/doridoridoriand/deadman-go/internal/ui"
 )
 
-const version = "0.0.1"
+var version = "0.0.1"
 
 func main() {
 	var (
