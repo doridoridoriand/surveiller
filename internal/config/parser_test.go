@@ -82,6 +82,26 @@ func TestLoadConfigParsesNamedGroup(t *testing.T) {
 	}
 }
 
+func TestLoadConfigParsesDirectiveWithoutComment(t *testing.T) {
+	configText := "" +
+		"deadman-go: interval=3s metrics.listen=9100\n" +
+		"example 192.0.2.1\n"
+
+	path := writeTempConfig(t, configText)
+	parser := DeadmanParser{}
+
+	cfg, err := parser.LoadConfig(path, CLIOverrides{})
+	if err != nil {
+		t.Fatalf("LoadConfig error: %v", err)
+	}
+	if cfg.Global.Interval != 3*time.Second {
+		t.Fatalf("expected interval 3s, got %v", cfg.Global.Interval)
+	}
+	if cfg.Global.MetricsListen != ":9100" {
+		t.Fatalf("expected metrics.listen :9100, got %q", cfg.Global.MetricsListen)
+	}
+}
+
 func TestLoadConfigIgnoresComments(t *testing.T) {
 	configText := "" +
 		"# normal comment\n" +

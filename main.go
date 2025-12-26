@@ -14,13 +14,14 @@ import (
 
 	"github.com/doridoridoriand/deadman-go/internal/cli"
 	"github.com/doridoridoriand/deadman-go/internal/config"
+	"github.com/doridoridoriand/deadman-go/internal/metrics"
 	"github.com/doridoridoriand/deadman-go/internal/ping"
 	"github.com/doridoridoriand/deadman-go/internal/scheduler"
 	"github.com/doridoridoriand/deadman-go/internal/state"
 	"github.com/doridoridoriand/deadman-go/internal/ui"
 )
 
-const version = "0.1.0"
+const version = "0.0.1"
 
 func main() {
 	var (
@@ -88,6 +89,16 @@ func main() {
 	defer cancel()
 
 	var wg sync.WaitGroup
+	if cfg.Global.MetricsListen != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := metrics.Serve(ctx, cfg.Global.MetricsListen, cfg.Global.MetricsMode, store); err != nil && !errors.Is(err, context.Canceled) {
+				fmt.Fprintf(os.Stderr, "metrics error: %v\n", err)
+				cancel()
+			}
+		}()
+	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
