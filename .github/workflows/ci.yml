@@ -52,10 +52,11 @@ jobs:
     - name: Run go vet
       run: go vet ./...
 
+    - name: Install staticcheck
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
     - name: Run staticcheck
-      uses: dominikh/staticcheck-action@v1.3.0
-      with:
-        version: "latest"
+      run: staticcheck ./...
 
   build-matrix:
     runs-on: ubuntu-latest
