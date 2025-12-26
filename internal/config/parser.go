@@ -58,6 +58,17 @@ func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config,
 			continue
 		}
 
+		if strings.HasPrefix(line, "deadman-go:") {
+			pairs, err := p.ParseDeadmanGoDirective(line)
+			if err != nil {
+				return nil, err
+			}
+			if err := applyDirective(&cfg.Global, pairs); err != nil {
+				return nil, err
+			}
+			continue
+		}
+
 		if strings.HasPrefix(line, "---") {
 			groupIndex++
 			groupName := strings.TrimSpace(strings.TrimPrefix(line, "---"))
@@ -86,12 +97,12 @@ func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config,
 // ParseDeadmanGoDirective extracts key=value pairs from a directive line.
 func (p DeadmanParser) ParseDeadmanGoDirective(line string) (map[string]string, error) {
 	trimmed := strings.TrimSpace(line)
-	if !strings.HasPrefix(trimmed, "#") {
-		return nil, fmt.Errorf("directive line must start with '#': %q", line)
+	if strings.HasPrefix(trimmed, "#") {
+		trimmed = strings.TrimSpace(strings.TrimPrefix(trimmed, "#"))
+	} else if !strings.HasPrefix(trimmed, "deadman-go:") {
+		return nil, fmt.Errorf("directive line must start with '# deadman-go:' or 'deadman-go:': %q", line)
 	}
-
-	payload := strings.TrimSpace(strings.TrimPrefix(trimmed, "#"))
-	payload = strings.TrimSpace(strings.TrimPrefix(payload, "deadman-go:"))
+	payload := strings.TrimSpace(strings.TrimPrefix(trimmed, "deadman-go:"))
 	if payload == "" {
 		return map[string]string{}, nil
 	}
@@ -167,7 +178,11 @@ func applyDirective(global *GlobalOptions, pairs map[string]string) error {
 				return fmt.Errorf("invalid metrics.mode: %q", val)
 			}
 		case "metrics.listen":
-			global.MetricsListen = val
+			if isDigits(val) {
+				global.MetricsListen = ":" + val
+			} else {
+				global.MetricsListen = val
+			}
 		case "ui.scale":
 			n, err := strconv.Atoi(val)
 			if err != nil {
@@ -201,9 +216,25 @@ func applyCLIOverrides(global *GlobalOptions, overrides CLIOverrides) {
 		global.MetricsMode = *overrides.MetricsMode
 	}
 	if overrides.MetricsListen != nil {
-		global.MetricsListen = *overrides.MetricsListen
+		val := *overrides.MetricsListen
+		if isDigits(val) {
+			val = ":" + val
+		}
+		global.MetricsListen = val
 	}
 	if overrides.UIDisable != nil {
 		global.UIDisable = *overrides.UIDisable
 	}
+}
+
+func isDigits(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
