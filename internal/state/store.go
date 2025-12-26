@@ -55,8 +55,8 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 		// OK: timeoutの25%以内
 		// WARN: timeoutの25%超、50%以内
 		// timeoutの50%超もWARNとして扱う
-		okThreshold := s.timeout / 4      // 25%
-		warnThreshold := s.timeout / 2    // 50%
+		okThreshold := s.timeout / 4   // 25%
+		warnThreshold := s.timeout / 2 // 50%
 		if result.RTT <= okThreshold {
 			target.Status = StatusOK
 		} else if result.RTT <= warnThreshold {
