@@ -293,7 +293,7 @@ SOFTWARE.
 
 ## BSD-3-Clause
 
-### golang.org/x/net v0.23.0
+### golang.org/x/net v0.38.0
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
