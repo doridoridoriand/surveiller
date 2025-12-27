@@ -1,5 +1,7 @@
 # deadman-go
 
+![deadman-go](assets/running.gif)
+
 A Go implementation of the [deadman](https://github.com/upa/deadman) ping monitoring tool, providing efficient host status monitoring with a terminal-based interface.
 
 ## About
