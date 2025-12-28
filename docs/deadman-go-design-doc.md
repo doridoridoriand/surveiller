@@ -546,12 +546,26 @@ type StateStore struct {
 1. **OK**: pingが成功し、RTTが`timeout`で指定されている値の25%以内の場合
    - 例: `timeout=100ms`の場合、RTTが25ms以内ならOK
 2. **WARN**: 以下のいずれかの場合
-   - pingが成功し、RTTが`timeout`の25%超、50%以内の場合
-   - pingが成功し、RTTが`timeout`の50%超の場合
+   - pingが成功し、RTTが`timeout`の25%超の場合（50%超でもWARNとして扱う）
    - pingが失敗した場合（連続失敗回数が`downThreshold`未満の場合）
-   - 例: `timeout=100ms`の場合、RTTが25ms超、50ms以内ならWARN
+   - 例: `timeout=100ms`の場合、RTTが25ms超ならWARN
 3. **DOWN**: pingが失敗し、連続失敗回数が`downThreshold`（デフォルト: 3回）以上の場合
 4. **UNKNOWN**: ターゲットが初期化された直後、まだpingが実行されていない場合
+
+##### 閾値の詳細
+
+**成功時のステータス判定（RTTベース）:**
+- `okThreshold = timeout / 4` (25%)
+- `warnThreshold = timeout / 2` (50%)
+- RTT ≤ okThreshold → **OK**
+- RTT > okThreshold → **WARN** (50%超でもWARNとして扱う)
+
+**失敗時のステータス判定（連続失敗回数ベース）:**
+- `downThreshold = 3` (デフォルト値、ハードコード)
+- 連続失敗回数 < downThreshold → **WARN**
+- 連続失敗回数 ≥ downThreshold → **DOWN**
+
+**注意:** これらの閾値は現在ハードコードされており、設定ファイルやCLIオプションで変更することはできません。
 
 ### 9.3 Scheduler
 
@@ -587,11 +601,27 @@ func (s *Scheduler) UpdateConfig(global GlobalOptions, targets []TargetConfig) {
 
 ### 9.4 UI
 
-- TUI ライブラリ: `bubbletea` / `tcell` などを想定
+- TUI ライブラリ: `tcell` を使用
 - 表示要素:
   - 上段: タイムスタンプ、全体統計（OK / WARN / DOWN ホスト数）
   - 中段: グループごとのターゲット一覧（ラベル / アドレス / 状態 / RTT＋バー）
   - 下段: ヘルプ (q: quit, r: reload, +/-: scale 調整 など)
+
+#### UI表示項目
+
+各ターゲット行には以下の情報が表示される：
+
+1. **Name**: ターゲット名（ラベル）
+2. **Address**: IPアドレス
+3. **Status**: ステータス（OK / WARN / DOWN / UNKNOWN）
+4. **RTT**: 平均RTT（Historyから計算）に「RTT:」ラベルを付与
+   - 表示形式: `RTT:XXms` または `RTT:XX.Xs` など
+   - Historyが空の場合は`LastRTT`を使用
+5. **LOSS**: パケットロス率をパーセンテージで表示
+   - 表示形式: `LOSS:XX.X%`
+   - 計算式: `(TotalFailure / (TotalSuccess + TotalFailure)) × 100`
+   - 成功/失敗が0件の場合は`0.0%`を表示
+6. **RTT Bar**: RTTの視覚的なバーグラフ（`ui.scale`でスケール調整可能）
 
 ```go
 type UIConfig struct {

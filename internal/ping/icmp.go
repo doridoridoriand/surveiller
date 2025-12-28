@@ -78,6 +78,10 @@ func (p *ICMPPinger) Ping(ctx context.Context, addr string, timeout time.Duratio
 
 		n, peer, err := conn.ReadFrom(buf)
 		if err != nil {
+			// timeoutエラーを適切に処理
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return Result{Success: false, Error: fmt.Errorf("ping timeout: %w", err)}
+			}
 			return Result{Success: false, Error: err}
 		}
 		if peer == nil {

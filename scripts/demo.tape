@@ -6,7 +6,7 @@ Set Height 720
 
 Type ./bin/deadman-go example/deadman.conf
 
-Sleep 500ms
+Sleep 1s
 
 Enter
 

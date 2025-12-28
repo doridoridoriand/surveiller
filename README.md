@@ -22,6 +22,8 @@ deadman-go is inspired by and maintains compatibility with the original [deadman
 - Prometheus metrics export (optional)
 - Configuration hot-reload with SIGHUP
 - Fallback to external ping command when ICMP privileges unavailable
+- Status-based health monitoring (OK / WARN / DOWN) with configurable thresholds
+- Packet loss percentage display in TUI
 
 ## Installation
 
@@ -119,6 +121,57 @@ router 192.168.1.1
 server1 192.168.1.10
 server2 192.168.1.11
 ```
+
+## Status Monitoring
+
+### Status Levels
+
+deadman-go uses four status levels to indicate target health:
+
+- **OK**: Ping successful and RTT is within 25% of the configured timeout
+- **WARN**: Either:
+  - Ping successful but RTT exceeds 25% of timeout
+  - Ping failed but consecutive failures are less than the threshold
+- **DOWN**: Ping failed and consecutive failures reach the threshold (default: 3)
+- **UNKNOWN**: Target initialized but no ping has been executed yet
+
+### Status Thresholds
+
+**Success-based thresholds (RTT-based):**
+- OK: `RTT ≤ timeout × 25%`
+- WARN: `RTT > timeout × 25%` (even if RTT exceeds 50% of timeout)
+
+**Failure-based thresholds (consecutive failures):**
+- WARN: Consecutive failures < 3
+- DOWN: Consecutive failures ≥ 3
+
+**Note:** These thresholds are currently hardcoded and cannot be changed via configuration file or CLI options.
+
+**Example:**
+- With `timeout=100ms`:
+  - RTT ≤ 25ms → **OK**
+  - RTT > 25ms → **WARN**
+  - 1-2 consecutive failures → **WARN**
+  - 3+ consecutive failures → **DOWN**
+
+## Terminal UI
+
+The TUI displays the following information for each target:
+
+1. **Name**: Target label/name
+2. **Address**: IP address
+3. **Status**: Current status (OK / WARN / DOWN / UNKNOWN) with color coding:
+   - Green: OK
+   - Yellow: WARN
+   - Red: DOWN
+   - Gray: UNKNOWN
+4. **RTT**: Average RTT with label prefix (`RTT:XXms` or `RTT:XX.Xs`)
+   - Calculated from ping history
+   - Falls back to last RTT if history is empty
+5. **LOSS**: Packet loss percentage (`LOSS:XX.X%`)
+   - Calculated as: `(TotalFailures / (TotalSuccesses + TotalFailures)) × 100`
+   - Shows `0.0%` when no pings have been executed
+6. **RTT Bar**: Visual bar graph representing RTT (scaled by `ui.scale` setting)
 
 ## Prometheus Metrics
 

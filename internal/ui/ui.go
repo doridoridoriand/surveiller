@@ -93,8 +93,12 @@ func (u *UI) render(screen tcell.Screen, snapshot []state.TargetStatus) {
 	header := fmt.Sprintf(" deadman-go  %s  (q to quit)", now)
 	drawText(screen, 0, 0, width, header, tcell.StyleDefault.Bold(true))
 
+	// 設定情報を2行目に表示
+	configInfo := formatConfigInfo(u.cfg)
+	drawText(screen, 0, 1, width, configInfo, tcell.StyleDefault.Foreground(tcell.ColorGray))
+
 	groups := groupTargets(snapshot)
-	y := 1
+	y := 2
 	for _, group := range groups {
 		if height-y < minBoxHeight {
 			break
@@ -176,7 +180,15 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 	name := padOrTrim(target.Name, minInt(14, width))
 	addr := padOrTrim(target.Address, minInt(18, width))
 	status := padOrTrim(string(target.Status), 6)
-	rtt := padOrTrim(formatRTT(target.LastRTT), 8)
+
+	// 平均RTTを計算
+	avgRTT := calculateAvgRTT(target)
+	rttLabel := "RTT:"
+	rtt := padOrTrim(fmt.Sprintf("%s%s", rttLabel, formatRTT(avgRTT)), 12)
+
+	// LOSS率を計算して表示
+	lossPercent := calculateLossPercent(target)
+	loss := padOrTrim(fmt.Sprintf("LOSS:%.1f%%", lossPercent), 12)
 
 	parts := []styledText{
 		{text: name, style: tcell.StyleDefault},
@@ -186,6 +198,8 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 		{text: status, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},
 		{text: rtt, style: tcell.StyleDefault},
+		{text: " ", style: tcell.StyleDefault},
+		{text: loss, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},
 	}
 
@@ -327,6 +341,25 @@ func formatRTT(rtt time.Duration) string {
 	return fmt.Sprintf("%.1fs", rtt.Seconds())
 }
 
+func calculateAvgRTT(target state.TargetStatus) time.Duration {
+	if len(target.History) == 0 {
+		return target.LastRTT
+	}
+	var sum time.Duration
+	for _, point := range target.History {
+		sum += point.RTT
+	}
+	return sum / time.Duration(len(target.History))
+}
+
+func calculateLossPercent(target state.TargetStatus) float64 {
+	total := target.TotalSuccess + target.TotalFailure
+	if total == 0 {
+		return 0.0
+	}
+	return float64(target.TotalFailure) / float64(total) * 100.0
+}
+
 func statusStyle(status state.Status) tcell.Style {
 	switch status {
 	case state.StatusOK:
@@ -352,4 +385,24 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func formatConfigInfo(cfg config.GlobalOptions) string {
+	intervalStr := formatDuration(cfg.Interval)
+	timeoutStr := formatDuration(cfg.Timeout)
+	return fmt.Sprintf(" interval=%s  timeout=%s  max_concurrency=%d  ui.scale=%d",
+		intervalStr, timeoutStr, cfg.MaxConcurrency, cfg.UIScale)
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Millisecond {
+		return fmt.Sprintf("%dus", d.Microseconds())
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	if d < time.Minute {
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	}
+	return fmt.Sprintf("%.1fm", d.Minutes())
 }
