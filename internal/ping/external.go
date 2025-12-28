@@ -27,6 +27,10 @@ func (p *ExternalPinger) Ping(ctx context.Context, addr string, timeout time.Dur
 	cmd := exec.CommandContext(ctx, "ping", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		// contextがtimeoutでキャンセルされた場合をチェック
+		if ctx.Err() == context.DeadlineExceeded {
+			return Result{Success: false, Error: fmt.Errorf("ping timeout: %w", ctx.Err())}
+		}
 		return Result{Success: false, Error: fmt.Errorf("external ping failed: %w", err)}
 	}
 
