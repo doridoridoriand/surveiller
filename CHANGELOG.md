@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-12-28
+
+### Added
+- Add RTT label and LOSS percentage display to TUI
+- Display current configuration in TUI header (interval, timeout, max_concurrency, ui.scale)
+- Add clean-build target to Makefile
+- Add sample configuration file (deadman.sample.conf)
+- Add demo recording and README preview
+
+### Changed
+- Change threshold calculation to use average of recent 10 RTT data points
+- Fallback to available data points if less than 10 are available for average calculation
+
+### Fixed
+- Improve timeout error handling in ICMP/External ping implementations
+- ICMPPinger: properly detect and handle timeout errors from ReadFrom
+- ExternalPinger: check for context.DeadlineExceeded to distinguish timeout errors
+- Format code with gofmt
+
+### Removed
+- Remove recorded configuration files from repository
+- Remove public prep checklist and quick release script
+
+### Documentation
+- Update demo GIF
+- Add detailed documentation for status thresholds and UI display changes
+- Document RTT-based and failure-based thresholds (25% RTT threshold, 3 consecutive failures)
+- Add descriptions for UI components (RTT label, LOSS percentage)
+
 ## [0.0.2] - 2025-12-27
 
 ### Changed
