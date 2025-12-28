@@ -176,7 +176,15 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 	name := padOrTrim(target.Name, minInt(14, width))
 	addr := padOrTrim(target.Address, minInt(18, width))
 	status := padOrTrim(string(target.Status), 6)
-	rtt := padOrTrim(formatRTT(target.LastRTT), 8)
+	
+	// 平均RTTを計算
+	avgRTT := calculateAvgRTT(target)
+	rttLabel := "RTT:"
+	rtt := padOrTrim(fmt.Sprintf("%s%s", rttLabel, formatRTT(avgRTT)), 12)
+	
+	// LOSS率を計算して表示
+	lossPercent := calculateLossPercent(target)
+	loss := padOrTrim(fmt.Sprintf("LOSS:%.1f%%", lossPercent), 12)
 
 	parts := []styledText{
 		{text: name, style: tcell.StyleDefault},
@@ -186,6 +194,8 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 		{text: status, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},
 		{text: rtt, style: tcell.StyleDefault},
+		{text: " ", style: tcell.StyleDefault},
+		{text: loss, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},
 	}
 
@@ -325,6 +335,25 @@ func formatRTT(rtt time.Duration) string {
 		return fmt.Sprintf("%dms", rtt.Milliseconds())
 	}
 	return fmt.Sprintf("%.1fs", rtt.Seconds())
+}
+
+func calculateAvgRTT(target state.TargetStatus) time.Duration {
+	if len(target.History) == 0 {
+		return target.LastRTT
+	}
+	var sum time.Duration
+	for _, point := range target.History {
+		sum += point.RTT
+	}
+	return sum / time.Duration(len(target.History))
+}
+
+func calculateLossPercent(target state.TargetStatus) float64 {
+	total := target.TotalSuccess + target.TotalFailure
+	if total == 0 {
+		return 0.0
+	}
+	return float64(target.TotalFailure) / float64(total) * 100.0
 }
 
 func statusStyle(status state.Status) tcell.Style {

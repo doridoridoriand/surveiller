@@ -51,6 +51,7 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 		target.LastSuccessAt = now
 		target.ConsecutiveOK++
 		target.ConsecutiveNG = 0
+		target.TotalSuccess++
 		// RTTに基づいてOK/WARNを判定
 		// OK: timeoutの25%以内
 		// WARN: timeoutの25%超、50%以内
@@ -72,6 +73,7 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 	target.LastFailureAt = now
 	target.ConsecutiveNG++
 	target.ConsecutiveOK = 0
+	target.TotalFailure++
 	if target.ConsecutiveNG >= s.downThreshold {
 		target.Status = StatusDown
 	} else {
