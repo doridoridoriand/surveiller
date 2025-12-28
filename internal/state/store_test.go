@@ -94,45 +94,59 @@ func TestStoreUpdateResultRTTThresholds(t *testing.T) {
 		{Name: "example", Address: "192.0.2.1"},
 	}, timeout)
 
+	// 直近10個のデータポイントで平均を計算するため、同じRTT値を10回送信して
+	// Historyを満たしてからテストを実行する
 	// OK: timeoutの25%以内（25ms以内）
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 20 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 20 * time.Millisecond})
+	}
 	status, _ := store.GetTargetStatus("example")
 	if status.Status != StatusOK {
-		t.Fatalf("expected OK for RTT 20ms (within 25%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected OK for avg RTT 20ms (within 25%% of 100ms), got %s", status.Status)
 	}
 
 	// OK: 境界値 - timeoutの25%ちょうど（25ms）
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 25 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 25 * time.Millisecond})
+	}
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusOK {
-		t.Fatalf("expected OK for RTT 25ms (exactly 25%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected OK for avg RTT 25ms (exactly 25%% of 100ms), got %s", status.Status)
 	}
 
 	// WARN: timeoutの25%超、50%以内（25ms超、50ms以内）
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 26 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 26 * time.Millisecond})
+	}
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for RTT 26ms (just over 25%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected WARN for avg RTT 26ms (just over 25%% of 100ms), got %s", status.Status)
 	}
 
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 40 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 40 * time.Millisecond})
+	}
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for RTT 40ms (between 25%% and 50%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected WARN for avg RTT 40ms (between 25%% and 50%% of 100ms), got %s", status.Status)
 	}
 
 	// WARN: 境界値 - timeoutの50%ちょうど（50ms）
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 50 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 50 * time.Millisecond})
+	}
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for RTT 50ms (exactly 50%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected WARN for avg RTT 50ms (exactly 50%% of 100ms), got %s", status.Status)
 	}
 
 	// WARN: timeoutの50%超（50ms超）
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 80 * time.Millisecond})
+	for i := 0; i < 10; i++ {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: 80 * time.Millisecond})
+	}
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for RTT 80ms (over 50%% of 100ms), got %s", status.Status)
+		t.Fatalf("expected WARN for avg RTT 80ms (over 50%% of 100ms), got %s", status.Status)
 	}
 }
 

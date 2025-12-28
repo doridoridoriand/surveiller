@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	defaultHistorySize   = 100
-	defaultDownThreshold = 3
+	defaultHistorySize      = 100
+	defaultDownThreshold    = 3
+	thresholdDataPointCount = 10 // 閾値判定に使うデータポイント数
 )
 
 // StoreImpl is a thread-safe in-memory state store.
@@ -52,21 +53,31 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 		target.ConsecutiveOK++
 		target.ConsecutiveNG = 0
 		target.TotalSuccess++
+		
+		// Historyに追加（判定前に追加して、直近のデータポイントを含める）
+		s.appendHistory(target, result.RTT, now)
+		
+		// 直近N個のデータポイントの平均RTTで閾値判定
+		avgRTT := calculateRecentAvgRTT(target.History, thresholdDataPointCount)
+		if avgRTT <= 0 {
+			// データポイントが不足している場合は最新のRTTを使用
+			avgRTT = result.RTT
+		}
+		
 		// RTTに基づいてOK/WARNを判定
 		// OK: timeoutの25%以内
 		// WARN: timeoutの25%超、50%以内
 		// timeoutの50%超もWARNとして扱う
 		okThreshold := s.timeout / 4   // 25%
 		warnThreshold := s.timeout / 2 // 50%
-		if result.RTT <= okThreshold {
+		if avgRTT <= okThreshold {
 			target.Status = StatusOK
-		} else if result.RTT <= warnThreshold {
+		} else if avgRTT <= warnThreshold {
 			target.Status = StatusWarn
 		} else {
 			// timeoutの50%超もWARNとして扱う
 			target.Status = StatusWarn
 		}
-		s.appendHistory(target, result.RTT, now)
 		return
 	}
 
@@ -148,4 +159,30 @@ func copyTargetStatus(source *TargetStatus) TargetStatus {
 		clone.History = append([]RTTPoint(nil), source.History...)
 	}
 	return clone
+}
+
+// calculateRecentAvgRTT calculates the average RTT from the most recent N data points.
+// Returns 0 if there are no data points.
+func calculateRecentAvgRTT(history []RTTPoint, count int) time.Duration {
+	if len(history) == 0 {
+		return 0
+	}
+	
+	// 直近N個のデータポイントを使用（Historyは時系列順に並んでいる）
+	start := len(history) - count
+	if start < 0 {
+		start = 0
+	}
+	
+	var sum time.Duration
+	for i := start; i < len(history); i++ {
+		sum += history[i].RTT
+	}
+	
+	usedCount := len(history) - start
+	if usedCount == 0 {
+		return 0
+	}
+	
+	return sum / time.Duration(usedCount)
 }
