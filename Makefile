@@ -5,7 +5,7 @@ PKG ?= ./...
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS ?= -s -w -X main.version=$(VERSION)
 
-.PHONY: all build test test-prop test-all lint clean fmt vet install
+.PHONY: all build test test-prop test-all lint clean clean-build fmt vet install
 
 all: build
 
@@ -40,6 +40,9 @@ install: build
 
 clean:
 	@rm -rf $(BIN_DIR)
+	go clean -cache
+
+clean-build: clean build
 
 # Development helpers
 dev-deps:
