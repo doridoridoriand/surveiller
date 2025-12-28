@@ -93,8 +93,12 @@ func (u *UI) render(screen tcell.Screen, snapshot []state.TargetStatus) {
 	header := fmt.Sprintf(" deadman-go  %s  (q to quit)", now)
 	drawText(screen, 0, 0, width, header, tcell.StyleDefault.Bold(true))
 
+	// 設定情報を2行目に表示
+	configInfo := formatConfigInfo(u.cfg)
+	drawText(screen, 0, 1, width, configInfo, tcell.StyleDefault.Foreground(tcell.ColorGray))
+
 	groups := groupTargets(snapshot)
-	y := 1
+	y := 2
 	for _, group := range groups {
 		if height-y < minBoxHeight {
 			break
@@ -381,4 +385,24 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func formatConfigInfo(cfg config.GlobalOptions) string {
+	intervalStr := formatDuration(cfg.Interval)
+	timeoutStr := formatDuration(cfg.Timeout)
+	return fmt.Sprintf(" interval=%s  timeout=%s  max_concurrency=%d  ui.scale=%d",
+		intervalStr, timeoutStr, cfg.MaxConcurrency, cfg.UIScale)
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Millisecond {
+		return fmt.Sprintf("%dus", d.Microseconds())
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	if d < time.Minute {
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	}
+	return fmt.Sprintf("%.1fm", d.Minutes())
 }
