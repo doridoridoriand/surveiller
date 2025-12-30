@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-12-31
+
 ### Changed
+- Rename project from deadman to surveiller
 - Clarify platform support levels in documentation
 - Update macOS and Windows builds to experimental status
 - Improve platform-specific documentation and issue reporting guidelines
@@ -87,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - golang.org/x/text: v0.32.0
 - Updated Go toolchain to 1.24.11
 
-## [0.0.1] - 2025-01-XX
+## [0.0.1] - 2025-12-27
 
 ### Added
 - Initial Go implementation of deadman ping monitoring tool
