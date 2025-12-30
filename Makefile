@@ -19,7 +19,7 @@ test:
 	$(GO) test -v $(PKG)
 
 test-prop:
-	$(GO) test -v -tags=property $(PKG)
+	$(GO) test -v -tags=property ./internal/ping
 
 test-all: test test-prop
 
