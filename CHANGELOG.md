@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-12-31
+
 ### Changed
+- Rename project from deadman to surveiller
 - Clarify platform support levels in documentation
 - Update macOS and Windows builds to experimental status
 - Improve platform-specific documentation and issue reporting guidelines
