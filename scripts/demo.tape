@@ -4,7 +4,7 @@ Set FontSize 18
 Set Width 1280
 Set Height 720
 
-Type ./bin/surveiller example/surveiller.conf
+Type ./bin/surveiller example/surveiller.sample.conf
 
 Sleep 1s
 
