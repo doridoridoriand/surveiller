@@ -19,7 +19,7 @@ test:
 	$(GO) test -v $(PKG)
 
 test-prop:
-	$(GO) test -v -tags=property $(PKG)
+	$(GO) test -v -tags=property ./internal/ping
 
 test-all: test test-prop
 
@@ -40,7 +40,7 @@ install: build
 
 clean:
 	@rm -rf $(BIN_DIR)
-	go clean -cache
+	go clean -cache -testcache -modcache
 
 clean-build: clean build
 
