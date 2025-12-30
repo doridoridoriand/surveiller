@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Clarify platform support levels in documentation
+- Update macOS and Windows builds to experimental status
+- Improve platform-specific documentation and issue reporting guidelines
+
+### Documentation
+- Add platform support matrix with clear support levels (Linux: fully supported, macOS/Windows: experimental)
+- Add platform-specific notes for ICMP privileges and external ping fallback
+- Update contributing guidelines with platform-specific testing requirements
+- Enhance bug reporting template for experimental platforms
+- Update release notes template to include platform support information
+
+## [0.0.4] - 2025-12-30
+
+### Added
+- Comprehensive unit test coverage for ping package (External, ICMP, and Fallback pingers)
+- Property-based tests for timeout handling validation
+- Unit tests for CLI flags parsing and validation
+- Unit tests for metrics collection and export functionality
+- Test coverage tracking and improvement documentation
+
+### Changed
+- Translate Japanese comments to English in sample configuration file (deadman.sample.conf)
+- Update Go version from 1.24.11 to stable 1.23.4 in CI workflow
+- Enhance clean command to remove test and module caches (-testcache, -modcache)
+- Improve test separation with build tags for property tests
+- Scope property test execution to ping package only for better performance
+
+### Fixed
+- Resolve CI build issues with non-existent Go version
+- Fix Go module configuration by removing invalid toolchain directive
+- Apply gofmt formatting fixes to test files
+- Ensure all tests pass and build succeeds in CI environment
+
+### Technical
+- Achieve 49.8% overall test coverage across all packages
+- Individual package coverage: CLI (97.5%), Config (83.5%), Metrics (90.4%), Ping (60.4%), Scheduler (81.0%), State (84.1%)
+- Add 618 lines of comprehensive test code for ping functionality
+- Add 258 lines of unit tests for CLI and metrics packages
+- Implement timeout handling validation through property-based testing
+
 ## [0.0.3] - 2025-12-28
 
 ### Added

@@ -53,12 +53,27 @@ make clean
 - Add comments for exported functions and complex logic
 - Keep functions focused and reasonably sized
 
-### Testing
+### Platform Support
 
-- Add unit tests for new functionality
-- Include property-based tests for core logic when appropriate
-- Ensure all tests pass before submitting PR
-- Maintain or improve test coverage
+When contributing platform-specific fixes or improvements:
+
+#### Linux (Primary Platform)
+- All changes must include tests
+- CI/CD pipeline provides comprehensive testing
+- Performance benchmarks required for core changes
+
+#### macOS and Windows (Experimental Platforms)
+- Basic functionality testing appreciated but not required
+- Community testing and feedback valuable
+- Platform-specific issues should be clearly documented
+- Consider fallback mechanisms for platform limitations
+
+### Testing Guidelines
+
+- Unit tests required for all new functionality
+- Property-based tests for core ping logic
+- Integration tests for configuration parsing
+- Manual testing on experimental platforms welcome but not mandatory
 
 ### Compatibility
 
@@ -78,12 +93,18 @@ make clean
 
 When reporting bugs, please include:
 - Operating system and version
-- Go version
+- Go version (if building from source)
 - deadman-go version
 - Configuration file (sanitized)
 - Steps to reproduce
 - Expected vs actual behavior
 - Error messages or logs
+
+#### For macOS/Windows (Experimental Platforms)
+Additionally include:
+- Whether running with elevated privileges (sudo/administrator)
+- ICMP vs external ping command behavior
+- Network configuration details if relevant
 
 ### Feature Requests
 

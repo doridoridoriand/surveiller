@@ -148,13 +148,15 @@ jobs:
         
         Download the appropriate binary for your platform from the assets below:
         
-        | Platform | Architecture | Binary |
-        |----------|-------------|---------|
-        | Linux | AMD64 | \`deadman-go-linux-amd64\` |
-        | Linux | ARM64 | \`deadman-go-linux-arm64\` |
-        | macOS | Intel | \`deadman-go-darwin-amd64\` |
-        | macOS | Apple Silicon | \`deadman-go-darwin-arm64\` |
-        | Windows | AMD64 | \`deadman-go-windows-amd64.exe\` |
+        | Platform | Architecture | Binary | Support Level |
+        |----------|-------------|---------|---------------|
+        | Linux | AMD64 | \`deadman-go-linux-amd64\` | ✅ Fully Supported |
+        | Linux | ARM64 | \`deadman-go-linux-arm64\` | ✅ Fully Supported |
+        | macOS | Intel | \`deadman-go-darwin-amd64\` | ⚠️ Experimental |
+        | macOS | Apple Silicon | \`deadman-go-darwin-arm64\` | ⚠️ Experimental |
+        | Windows | AMD64 | \`deadman-go-windows-amd64.exe\` | ⚠️ Experimental |
+        
+        **Note**: Experimental builds have verified basic functionality but are not part of continuous testing. Community feedback is welcome for platform-specific issues.
         
         ### Verify Installation
         

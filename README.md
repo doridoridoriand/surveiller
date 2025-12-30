@@ -31,6 +31,14 @@ deadman-go is inspired by and maintains compatibility with the original [deadman
 
 Download the latest release from the [releases page](https://github.com/doridoridoriand/deadman-go/releases).
 
+#### Platform Support
+
+- **Linux (AMD64/ARM64)**: Fully supported and tested
+- **macOS (Intel/Apple Silicon)**: Experimental build - basic functionality verified but not continuously tested
+- **Windows (AMD64)**: Experimental build - basic functionality verified but not continuously tested
+
+**Note**: macOS and Windows builds are provided as experimental releases. While basic functionality has been verified, these platforms are not part of our continuous testing pipeline. Community feedback and contributions for platform-specific issues are welcome.
+
 ### Build from Source
 
 ```bash
@@ -239,13 +247,50 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## Roadmap
 
 - [ ] SSH relay support (`relay=` option)
-- [ ] macOS and Windows support
 - [ ] Enhanced Grafana dashboard templates
 - [ ] Additional monitoring protocols (HTTP, TCP)
 - [ ] Configuration validation and better error messages
+- [ ] Improved macOS and Windows support (currently experimental)
+
+## Platform-Specific Notes
+
+### Linux
+- Fully supported with comprehensive testing
+- ICMP ping requires root privileges or `CAP_NET_RAW` capability
+- Falls back to external `ping` command when privileges unavailable
+
+### macOS (Experimental)
+- Basic functionality verified but not continuously tested
+- May require `sudo` for ICMP ping functionality
+- External `ping` command fallback available
+- Community feedback welcome for platform-specific issues
+
+### Windows (Experimental)
+- Basic functionality verified but not continuously tested
+- May require administrator privileges for ICMP ping
+- External `ping` command fallback available
+- Community feedback welcome for platform-specific issues
+
+**Note**: For production use, Linux is the recommended platform with full testing coverage.
 
 ## Support
 
 - Create an [issue](https://github.com/doridoridoriand/deadman-go/issues) for bug reports or feature requests
 - Check the [documentation](docs/) for detailed design information
 - Review [example configurations](example/) for usage patterns
+
+### Reporting Platform-Specific Issues
+
+When reporting issues on macOS or Windows (experimental platforms), please include:
+- Operating system version
+- Whether running with elevated privileges (sudo/administrator)
+- ICMP ping vs external ping command behavior
+- Complete error messages and logs
+
+### Reporting Platform-Specific Issues
+
+When reporting issues on macOS or Windows (experimental platforms), please include:
+- Operating system version
+- Whether running with elevated privileges (sudo/administrator)
+- ICMP ping vs external ping command behavior
+- Complete error messages and logs
