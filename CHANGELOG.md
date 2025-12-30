@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - golang.org/x/text: v0.32.0
 - Updated Go toolchain to 1.24.11
 
-## [0.0.1] - 2025-01-XX
+## [0.0.1] - 2025-12-27
 
 ### Added
 - Initial Go implementation of deadman ping monitoring tool
