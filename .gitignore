@@ -58,6 +58,7 @@ coverage.html
 
 # Local configuration files (if any)
 *.local.conf
+*.test.conf
 config.local.*
 
 # Backup files
