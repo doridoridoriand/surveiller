@@ -1,12 +1,12 @@
-# deadman-go
+# surveiller
 
-![deadman-go](assets/running.gif)
+![surveiller](assets/running.gif)
 
 A Go implementation of the [deadman](https://github.com/upa/deadman) ping monitoring tool, providing efficient host status monitoring with a terminal-based interface.
 
 ## About
 
-deadman-go is inspired by and maintains compatibility with the original [deadman](https://github.com/upa/deadman) tool by [upa](https://github.com/upa). This Go implementation offers:
+surveiller is inspired by and maintains compatibility with the original [deadman](https://github.com/upa/deadman) tool by [upa](https://github.com/upa). This Go implementation offers:
 
 - **Single binary distribution** - No Python dependencies required
 - **High concurrency** - Efficient monitoring of hundreds of hosts using Go goroutines
@@ -29,7 +29,7 @@ deadman-go is inspired by and maintains compatibility with the original [deadman
 
 ### Pre-built Binaries
 
-Download the latest release from the [releases page](https://github.com/doridoridoriand/deadman-go/releases).
+Download the latest release from the [releases page](https://github.com/doridoridoriand/surveiller/releases).
 
 #### Platform Support
 
@@ -42,8 +42,8 @@ Download the latest release from the [releases page](https://github.com/doridori
 ### Build from Source
 
 ```bash
-git clone https://github.com/doridoridoriand/deadman-go.git
-cd deadman-go
+git clone https://github.com/doridoridoriand/surveiller.git
+cd surveiller
 make build
 ```
 
@@ -55,7 +55,7 @@ Requirements:
 ### Basic Usage
 
 ```bash
-./bin/deadman-go path/to/deadman.conf
+./bin/surveiller path/to/surveiller.conf
 ```
 
 ### Configuration Format
@@ -63,7 +63,7 @@ Requirements:
 The configuration format is compatible with the original deadman:
 
 ```conf
-# deadman-go: interval=2s timeout=1500ms max_concurrency=50 ui.scale=25 ui.disable=false
+# surveiller: interval=2s timeout=1500ms max_concurrency=50 ui.scale=25 ui.disable=false
 google 216.58.197.174
 googleDNS 8.8.8.8
 ---
@@ -72,7 +72,7 @@ kame 203.178.141.194
 
 - Each target line: `name address`
 - Use `---` to start a new group
-- `# deadman-go:` directives set global options
+- `# surveiller:` directives set global options
 - Lines starting with `#` are comments
 
 ### CLI Options
@@ -80,14 +80,14 @@ kame 203.178.141.194
 CLI options override config file values:
 
 ```bash
-./bin/deadman-go \
+./bin/surveiller \
   -interval 1s \
   -timeout 500ms \
   -max-concurrency 10 \
   -metrics-mode per-target \
   -metrics-listen :9100 \
   -no-ui \
-  path/to/deadman.conf
+  path/to/surveiller.conf
 ```
 
 ### Available Options
@@ -104,7 +104,7 @@ CLI options override config file values:
 
 ### Global Options
 
-Set in config file using `# deadman-go:` directive:
+Set in config file using `# surveiller:` directive:
 
 - `interval`: Ping interval (e.g., `1s`, `500ms`)
 - `timeout`: Ping timeout
@@ -118,7 +118,7 @@ Set in config file using `# deadman-go:` directive:
 
 ```conf
 # Global settings
-# deadman-go: interval=1s timeout=1s max_concurrency=100 ui.scale=10
+# surveiller: interval=1s timeout=1s max_concurrency=100 ui.scale=10
 
 # Internet connectivity
 google 216.58.197.174
@@ -134,7 +134,7 @@ server2 192.168.1.11
 
 ### Status Levels
 
-deadman-go uses four status levels to indicate target health:
+surveiller uses four status levels to indicate target health:
 
 - **OK**: Ping successful and RTT is within 25% of the configured timeout
 - **WARN**: Either:
@@ -183,17 +183,17 @@ The TUI displays the following information for each target:
 
 ## Prometheus Metrics
 
-When `metrics.listen` is configured, deadman-go exposes Prometheus metrics:
+When `metrics.listen` is configured, surveiller exposes Prometheus metrics:
 
 ```bash
 curl http://localhost:9100/metrics
 ```
 
 Available metrics:
-- `deadman_ping_rtt_seconds`: Current RTT per target
-- `deadman_ping_success_total`: Successful ping count
-- `deadman_ping_failure_total`: Failed ping count
-- `deadman_ping_up`: Target status (1=up, 0=down)
+- `surveiller_ping_rtt_seconds`: Current RTT per target
+- `surveiller_ping_success_total`: Successful ping count
+- `surveiller_ping_failure_total`: Failed ping count
+- `surveiller_ping_up`: Target status (1=up, 0=down)
 
 ## Development
 
@@ -275,7 +275,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## Support
 
-- Create an [issue](https://github.com/doridoridoriand/deadman-go/issues) for bug reports or feature requests
+- Create an [issue](https://github.com/doridoridoriand/surveiller/issues) for bug reports or feature requests
 - Check the [documentation](docs/) for detailed design information
 - Review [example configurations](example/) for usage patterns
 

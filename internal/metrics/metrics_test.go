@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/ping"
-	"github.com/doridoridoriand/deadman-go/internal/state"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/ping"
+	"github.com/doridoridoriand/surveiller/internal/state"
 )
 
 type fakeStore struct {
@@ -45,11 +45,11 @@ func TestWriteAggregated(t *testing.T) {
 
 	got := buf.String()
 	expected := strings.Join([]string{
-		"deadman_targets_total 4",
-		"deadman_targets_ok 1",
-		"deadman_targets_warn 1",
-		"deadman_targets_down 1",
-		"deadman_targets_unknown 1",
+		"surveiller_targets_total 4",
+		"surveiller_targets_ok 1",
+		"surveiller_targets_warn 1",
+		"surveiller_targets_down 1",
+		"surveiller_targets_unknown 1",
 		"",
 	}, "\n")
 	if got != expected {
@@ -82,9 +82,9 @@ func TestWritePerTarget(t *testing.T) {
 	labels1 := `target="name\\\"1",address="addr\\\\path",group="grp"`
 	labels2 := `target="down",address="1.1.1.1",group=""`
 	expected := strings.Join([]string{
-		"deadman_target_up{" + labels1 + "} 1",
-		"deadman_target_rtt_ms{" + labels1 + "} 15",
-		"deadman_target_up{" + labels2 + "} 0",
+		"surveiller_target_up{" + labels1 + "} 1",
+		"surveiller_target_rtt_ms{" + labels1 + "} 15",
+		"surveiller_target_up{" + labels2 + "} 0",
 		"",
 	}, "\n")
 	if buf.String() != expected {
@@ -124,7 +124,7 @@ func TestHandlerAggregatedOutput(t *testing.T) {
 	if contentType := rec.Header().Get("Content-Type"); contentType != "text/plain; version=0.0.4" {
 		t.Fatalf("unexpected content type: %q", contentType)
 	}
-	if !strings.Contains(rec.Body.String(), "deadman_targets_total 1") {
+	if !strings.Contains(rec.Body.String(), "surveiller_targets_total 1") {
 		t.Fatalf("expected aggregated metrics output, got %q", rec.Body.String())
 	}
 }

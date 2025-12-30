@@ -1,4 +1,4 @@
-# deadman-go Design Doc
+# surveiller Design Doc
 
 ## 1. 概要
 
@@ -12,7 +12,7 @@ deadman は `ping` を用いて複数ホストの疎通を監視し、curses ベ
 - 並列処理や高スケールな監視において、設計を見直す余地がある
 - Prometheus メトリクスや Grafana など、近年一般的な監視基盤との統合は標準機能として存在しない
 
-そこで、Go 言語で deadman を再実装した **deadman-go** を開発し、
+そこで、Go 言語で deadman を再実装した **surveiller** を開発し、
 
 - 元 deadman の UX / 設定互換を維持しつつ
 - Go ならではの軽量・高並列・単一バイナリ
@@ -30,7 +30,7 @@ deadman は `ping` を用いて複数ホストの疎通を監視し、curses ベ
 
 **含める**
 
-- deadman.conf との互換性を意識した設定ファイル読み込み
+- surveiller.conf との互換性を意識した設定ファイル読み込み
 - ICMP echo（ping）によるホスト疎通監視
 - curses もしくは類似 TUI による監視画面（シンプルなステータス＋RTT 表示）
 - goroutine によるホスト監視の並列化
@@ -51,7 +51,7 @@ deadman は `ping` を用いて複数ホストの疎通を監視し、curses ベ
 元 deadman（Python版）の主な機能は以下。
 
 - **ICMP echo によるホスト死活監視**
-  - 「ホスト名ラベル」と「IPアドレス」を列挙した config (`deadman.conf`) を読み込む
+  - 「ホスト名ラベル」と「IPアドレス」を列挙した config (`surveiller.conf`) を読み込む
 - **curses UI**
   - 各ターゲットの状態と RTT をバーグラフ形式で表示
 - **設定ファイル形式**
@@ -64,11 +64,11 @@ deadman は `ping` を用いて複数ホストの疎通を監視し、curses ベ
   - RTT バーのスケール変更
   - SIGHUP による config リロード（履歴保持）
 
-deadman-go では、上記のうち **コアとなる監視ロジックと設定フォーマット互換** を優先的にサポートする。
+surveiller では、上記のうち **コアとなる監視ロジックと設定フォーマット互換** を優先的にサポートする。
 
 ---
 
-## 3. deadman-go のゴール / 非ゴール
+## 3. surveiller のゴール / 非ゴール
 
 ### 3.1 ゴール
 
@@ -77,7 +77,7 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
 2. **高並列監視**
    - 100〜1000 ホスト程度を実用的に監視できる並列モデル
 3. **設定互換性**
-   - 既存 `deadman.conf` を大きく変更せずに移行可能
+   - 既存 `surveiller.conf` を大きく変更せずに移行可能
 4. **将来のメトリクス拡張**
    - Prometheus Exporter として動作できる構造（監視ループと HTTP `/metrics` の分離）
 
@@ -124,7 +124,7 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
   - 100〜1000ホスト程度を 1〜5秒間隔で監視できる（ホスト数 × インターバルはチューニング可能）
 - **可搬性**
   - 初期リリース (v0.1) の公式サポート対象は Linux (x86_64/arm64) のみ
-  - コンテナイメージ配布（Alpine + deadman-go など）を前提
+  - コンテナイメージ配布（Alpine + surveiller など）を前提
   - macOS は v0.2 以降の対応候補とし、ICMP 実装の動作検証後にサポート可否を判断する
 - **安定性**
   - ping ストームを防ぐためのレート制限
@@ -136,7 +136,7 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
 
 ### 6.1 全体構成
 
-- 単一バイナリ `deadman-go`
+- 単一バイナリ `surveiller`
 - 主な内部コンポーネント：
   - `config` パーサ
   - `scheduler`（監視頻度の制御）
@@ -161,11 +161,11 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
 
 ---
 
-## 7. 設定ファイル仕様（deadman.conf）
+## 7. 設定ファイル仕様（surveiller.conf）
 
 ### 7.1 フォーマット概要
 
-入力は元 deadman と同じ `deadman.conf` のフォーマットを前提とする。
+入力は元 deadman と同じ `surveiller.conf` のフォーマットを前提とする。
 
 - ホスト定義行:
   - `Name Address [key=value ...]`
@@ -180,19 +180,19 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
 
 - コメント行:
   - `#` で始まる行はコメントとして扱う
-  - うち、`# deadman-go:` で始まる行は deadman-go 独自のグローバル設定ディレクティブとして解釈する
+  - うち、`# surveiller:` で始まる行は surveiller 独自のグローバル設定ディレクティブとして解釈する
     - 例:
 
       ```text
-      # deadman-go: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s
+      # surveiller: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s
       ```
 
 - グループ区切り:
   - `---` をグループ区切りとして扱い、以降のターゲットに `Group` 名を付与する
 
-### 7.2 deadman-go 独自グローバル設定
+### 7.2 surveiller 独自グローバル設定
 
-`# deadman-go:` 行にスペース区切りで `key=value` を並べる。
+`# surveiller:` 行にスペース区切りで `key=value` を並べる。
 
 サポートするキー（v0.1 〜 将来拡張を想定）:
 
@@ -211,7 +211,7 @@ deadman-go では、上記のうち **コアとなる監視ロジックと設定
 # deadman config
 #
 
-# deadman-go: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s
+# surveiller: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s
 
 google      216.58.197.174
 googleDNS   8.8.8.8
@@ -222,13 +222,13 @@ kame6       2001:200:dff:fff1:216:3eff:feb1:44d7
 
 ### 7.3 CLI オプションとの優先順位
 
-- deadman.conf 内 `# deadman-go:` → **デフォルト値**
+- surveiller.conf 内 `# surveiller:` → **デフォルト値**
 - CLI オプション → **config より強い（優先）**
 
 例：
 
 ```bash
-deadman-go --max-concurrency 50 deadman.conf
+surveiller --max-concurrency 50 surveiller.conf
 # → config の max_concurrency=200 より 50 が優先される
 ```
 
@@ -248,7 +248,7 @@ const (
     MetricsModeBoth       MetricsMode = "both"
 )
 
-// deadman-go 独自のグローバル設定
+// surveiller 独自のグローバル設定
 type GlobalOptions struct {
     Interval       time.Duration // ping 間隔（ターゲットごと）
     Timeout        time.Duration // ping の timeout
@@ -261,7 +261,7 @@ type GlobalOptions struct {
     UIDisable bool // true の場合 TUI 無効（ログのみ）
 }
 
-// deadman.conf の 1 ターゲット
+// surveiller.conf の 1 ターゲット
 type TargetConfig struct {
     Name    string            // 表示名（ラベル）
     Address string            // ping 宛先
@@ -313,8 +313,8 @@ func LoadConfig(path string, cli CLIOverrides) (*Config, error) {
 
         // コメント
         if strings.HasPrefix(line, "#") {
-            if strings.HasPrefix(line, "# deadman-go:") {
-                parseDeadmanGoDirective(&cfg.Global, line)
+            if strings.HasPrefix(line, "# surveiller:") {
+                parseSurveillerDirective(&cfg.Global, line)
             }
             continue
         }
@@ -358,14 +358,14 @@ func defaultGlobalOptions() GlobalOptions {
 }
 ```
 
-#### `# deadman-go:` 行のパース
+#### `# surveiller:` 行のパース
 
 ```go
-func parseDeadmanGoDirective(global *GlobalOptions, line string) {
+func parseSurveillerDirective(global *GlobalOptions, line string) {
     // line 例:
-    // "# deadman-go: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s"
+    // "# surveiller: metrics.mode=per-target max_concurrency=200 interval=1s timeout=1s"
     s := strings.TrimSpace(strings.TrimPrefix(line, "#"))
-    s = strings.TrimSpace(strings.TrimPrefix(s, "deadman-go:"))
+    s = strings.TrimSpace(strings.TrimPrefix(s, "surveiller:"))
 
     if s == "" {
         return
@@ -655,20 +655,20 @@ func (u *UI) Run(ctx context.Context) error {
 
 **per-target モード:**
 
-- `deadman_ping_rtt_seconds{target="google", group="internet"}`
+- `surveiller_ping_rtt_seconds{target="google", group="internet"}`
   - 直近の RTT（Gauge）
-- `deadman_ping_success_total{target="google"}`
-- `deadman_ping_failure_total{target="google"}`
-- `deadman_ping_up{target="google"}`
+- `surveiller_ping_success_total{target="google"}`
+- `surveiller_ping_failure_total{target="google"}`
+- `surveiller_ping_up{target="google"}`
   - UP=1, DOWN=0（Gauge）
 
 **aggregated モード:**
 
-- `deadman_ping_rtt_seconds_avg{group="internet"}`
-- `deadman_ping_targets_up{group="internet"}`
-- `deadman_ping_targets_total{group="internet"}`
+- `surveiller_ping_rtt_seconds_avg{group="internet"}`
+- `surveiller_ping_targets_up{group="internet"}`
+- `surveiller_ping_targets_total{group="internet"}`
 
-Config（deadman.conf）の `# deadman-go:` 行で  
+Config（surveiller.conf）の `# surveiller:` 行で  
 `metrics.mode = "per-target" | "aggregated" | "both"` を指定し、  
 デプロイ規模や Prometheus サーバの負荷に応じて切り替えられるようにする。
 
@@ -687,7 +687,7 @@ Config（deadman.conf）の `# deadman-go:` 行で
 ## 11. CLI インターフェース案
 
 ```bash
-deadman-go [OPTIONS] <config-file>
+surveiller [OPTIONS] <config-file>
 
 Options:
   -i, --interval duration     Ping interval per target (override config)
@@ -720,14 +720,14 @@ func main() {
     flag.Parse()
 
     if *flagVersion {
-        fmt.Println("deadman-go version x.y.z")
+        fmt.Println("surveiller version x.y.z")
         return
     }
 
     // config path は位置引数で受ける想定
     args := flag.Args()
     if len(args) < 1 {
-        fmt.Fprintln(os.Stderr, "usage: deadman-go [options] <config-file>")
+        fmt.Fprintln(os.Stderr, "usage: surveiller [options] <config-file>")
         os.Exit(1)
     }
     configPath := args[0]
@@ -874,7 +874,7 @@ v0.1 では SSH 経由 ping (`relay=...`) をサポートしない。
   - goroutine による並列監視
   - シンプルな TUI 表示
 - Linux 向け単一バイナリ & コンテナイメージ
-- deadman.conf 互換（ホスト定義 / グループ / コメント）
+- surveiller.conf 互換（ホスト定義 / グループ / コメント）
 
 ### v0.2
 
@@ -901,4 +901,4 @@ v0.1 では SSH 経由 ping (`relay=...`) をサポートしない。
 
 ---
 
-以上を deadman-go の Design / Spec として利用する。
+以上を surveiller の Design / Spec として利用する。

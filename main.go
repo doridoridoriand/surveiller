@@ -12,13 +12,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/cli"
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/metrics"
-	"github.com/doridoridoriand/deadman-go/internal/ping"
-	"github.com/doridoridoriand/deadman-go/internal/scheduler"
-	"github.com/doridoridoriand/deadman-go/internal/state"
-	"github.com/doridoridoriand/deadman-go/internal/ui"
+	"github.com/doridoridoriand/surveiller/internal/cli"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/metrics"
+	"github.com/doridoridoriand/surveiller/internal/ping"
+	"github.com/doridoridoriand/surveiller/internal/scheduler"
+	"github.com/doridoridoriand/surveiller/internal/state"
+	"github.com/doridoridoriand/surveiller/internal/ui"
 )
 
 var version = "0.0.2"
@@ -55,7 +55,7 @@ func main() {
 	flag.Parse()
 
 	if flagVersion || flagVersionShort {
-		fmt.Fprintf(os.Stdout, "deadman-go version %s\n", version)
+		fmt.Fprintf(os.Stdout, "surveiller version %s\n", version)
 		return
 	}
 
@@ -68,7 +68,7 @@ func main() {
 
 	overrides := buildOverrides(flagInterval, flagTimeout, flagMaxConcurrency, flagMetricsMode, flagMetricsListen, flagNoUI)
 
-	parser := config.DeadmanParser{}
+	parser := config.SurveillerParser{}
 	cfg, err := parser.LoadConfig(configPath, overrides)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)

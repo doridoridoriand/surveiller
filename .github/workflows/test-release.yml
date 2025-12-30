@@ -51,19 +51,19 @@ jobs:
         
         # Linux
         echo "Building Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-amd64 .
+        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-linux-amd64 .
         echo "Building Linux ARM64..."
-        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-arm64 .
+        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-linux-arm64 .
         
         # macOS
         echo "Building macOS AMD64..."
-        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-amd64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-darwin-amd64 .
         echo "Building macOS ARM64..."
-        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-arm64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-darwin-arm64 .
         
         # Windows
         echo "Building Windows AMD64..."
-        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-windows-amd64.exe .
+        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-windows-amd64.exe .
         
         echo "All builds completed successfully!"
         ls -la dist/
@@ -71,9 +71,9 @@ jobs:
     - name: Test binary version
       run: |
         echo "Testing Linux binary version..."
-        ./dist/deadman-go-linux-amd64 -version
+        ./dist/surveiller-linux-amd64 -version
         echo "Testing macOS binary version..."
-        ./dist/deadman-go-darwin-amd64 -version
+        ./dist/surveiller-darwin-amd64 -version
 
     - name: Create test checksums
       run: |

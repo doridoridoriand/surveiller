@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/state"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/state"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -90,7 +90,7 @@ func (u *UI) render(screen tcell.Screen, snapshot []state.TargetStatus) {
 	}
 
 	now := time.Now().Format("2006-01-02 15:04:05")
-	header := fmt.Sprintf(" deadman-go  %s  (q to quit)", now)
+	header := fmt.Sprintf(" surveiller  %s  (q to quit)", now)
 	drawText(screen, 0, 0, width, header, tcell.StyleDefault.Bold(true))
 
 	// 設定情報を2行目に表示

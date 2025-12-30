@@ -39,19 +39,19 @@ jobs:
     - name: Build native macOS binary
       run: |
         make build
-        ./bin/deadman-go -version
+        ./bin/surveiller -version
 
     - name: Test ICMP functionality (requires sudo)
       run: |
         # Test external ping fallback (doesn't require sudo)
         echo "Testing external ping fallback..."
-        timeout 10s ./bin/deadman-go example/deadman.sample.conf -no-ui || true
+        timeout 10s ./bin/surveiller example/surveiller.sample.conf -no-ui || true
 
     - name: Cross-compile verification
       run: |
         # Verify we can cross-compile from macOS
-        GOOS=linux GOARCH=amd64 go build -o deadman-go-linux .
-        GOOS=windows GOARCH=amd64 go build -o deadman-go-windows.exe .
+        GOOS=linux GOARCH=amd64 go build -o surveiller-linux .
+        GOOS=windows GOARCH=amd64 go build -o surveiller-windows.exe .
         
         echo "Cross-compilation successful:"
-        ls -la deadman-go-*
+        ls -la surveiller-*

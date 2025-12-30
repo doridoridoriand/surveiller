@@ -61,19 +61,19 @@ jobs:
         
         # Linux
         echo "Building Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-amd64 .
+        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-linux-amd64 .
         echo "Building Linux ARM64..."
-        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-linux-arm64 .
+        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-linux-arm64 .
         
         # macOS
         echo "Building macOS AMD64..."
-        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-amd64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-darwin-amd64 .
         echo "Building macOS ARM64..."
-        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-darwin-arm64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-darwin-arm64 .
         
         # Windows
         echo "Building Windows AMD64..."
-        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/deadman-go-windows-amd64.exe .
+        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/surveiller-windows-amd64.exe .
         
         # Verify builds
         echo "Built files:"
@@ -86,7 +86,7 @@ jobs:
     - name: Test binaries
       run: |
         echo "Testing Linux binary..."
-        ./dist/deadman-go-linux-amd64 -version
+        ./dist/surveiller-linux-amd64 -version
         echo "Verifying other binaries exist..."
         ls -la dist/
         echo "All binaries built successfully!"
@@ -103,7 +103,7 @@ jobs:
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
         cat > release_notes.md << EOF
-        # deadman-go ${VERSION}
+        # surveiller ${VERSION}
         
         A Go implementation of the deadman ping monitoring tool, providing efficient host status monitoring with a terminal-based interface.
         
@@ -120,7 +120,7 @@ jobs:
           echo "- Cross-platform support (Linux, macOS, Windows)"
           echo "- Single binary distribution with no dependencies"
         else
-          echo "See [CHANGELOG.md](https://github.com/doridoridoriand/deadman-go/blob/main/CHANGELOG.md) for detailed changes."
+          echo "See [CHANGELOG.md](https://github.com/doridoridoriand/surveiller/blob/main/CHANGELOG.md) for detailed changes."
         fi)
         
         ## Installation
@@ -129,19 +129,19 @@ jobs:
         
         \`\`\`bash
         # Linux AMD64
-        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-linux-amd64 -o deadman-go
-        chmod +x deadman-go
-        sudo mv deadman-go /usr/local/bin/
+        curl -L https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/surveiller-linux-amd64 -o surveiller
+        chmod +x surveiller
+        sudo mv surveiller /usr/local/bin/
         
         # macOS (Intel)
-        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-darwin-amd64 -o deadman-go
-        chmod +x deadman-go
-        sudo mv deadman-go /usr/local/bin/
+        curl -L https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/surveiller-darwin-amd64 -o surveiller
+        chmod +x surveiller
+        sudo mv surveiller /usr/local/bin/
         
         # macOS (Apple Silicon)
-        curl -L https://github.com/doridoridoriand/deadman-go/releases/download/${VERSION}/deadman-go-darwin-arm64 -o deadman-go
-        chmod +x deadman-go
-        sudo mv deadman-go /usr/local/bin/
+        curl -L https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/surveiller-darwin-arm64 -o surveiller
+        chmod +x surveiller
+        sudo mv surveiller /usr/local/bin/
         \`\`\`
         
         ### Manual Download
@@ -150,41 +150,41 @@ jobs:
         
         | Platform | Architecture | Binary | Support Level |
         |----------|-------------|---------|---------------|
-        | Linux | AMD64 | \`deadman-go-linux-amd64\` | ✅ Fully Supported |
-        | Linux | ARM64 | \`deadman-go-linux-arm64\` | ✅ Fully Supported |
-        | macOS | Intel | \`deadman-go-darwin-amd64\` | ⚠️ Experimental |
-        | macOS | Apple Silicon | \`deadman-go-darwin-arm64\` | ⚠️ Experimental |
-        | Windows | AMD64 | \`deadman-go-windows-amd64.exe\` | ⚠️ Experimental |
+        | Linux | AMD64 | \`surveiller-linux-amd64\` | ✅ Fully Supported |
+        | Linux | ARM64 | \`surveiller-linux-arm64\` | ✅ Fully Supported |
+        | macOS | Intel | \`surveiller-darwin-amd64\` | ⚠️ Experimental |
+        | macOS | Apple Silicon | \`surveiller-darwin-arm64\` | ⚠️ Experimental |
+        | Windows | AMD64 | \`surveiller-windows-amd64.exe\` | ⚠️ Experimental |
         
         **Note**: Experimental builds have verified basic functionality but are not part of continuous testing. Community feedback is welcome for platform-specific issues.
         
         ### Verify Installation
         
         \`\`\`bash
-        deadman-go -version
+        surveiller -version
         \`\`\`
         
         ## Quick Start
         
         1. Create a configuration file:
         \`\`\`conf
-        # deadman-go: interval=2s timeout=1s max_concurrency=50
+        # surveiller: interval=2s timeout=1s max_concurrency=50
         google 8.8.8.8
         cloudflare 1.1.1.1
         ---
         router 192.168.1.1
         \`\`\`
         
-        2. Run deadman-go:
+        2. Run surveiller:
         \`\`\`bash
-        deadman-go config.conf
+        surveiller config.conf
         \`\`\`
         
         ## Documentation
         
-        - [README](https://github.com/doridoridoriand/deadman-go/blob/main/README.md) - Complete documentation
-        - [Configuration Guide](https://github.com/doridoridoriand/deadman-go/blob/main/README.md#configuration-reference) - Detailed configuration options
-        - [Contributing](https://github.com/doridoridoriand/deadman-go/blob/main/CONTRIBUTING.md) - How to contribute
+        - [README](https://github.com/doridoridoriand/surveiller/blob/main/README.md) - Complete documentation
+        - [Configuration Guide](https://github.com/doridoridoriand/surveiller/blob/main/README.md#configuration-reference) - Detailed configuration options
+        - [Contributing](https://github.com/doridoridoriand/surveiller/blob/main/CONTRIBUTING.md) - How to contribute
         
         ## Checksums
         
@@ -207,7 +207,7 @@ jobs:
         prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}
         make_latest: true
         tag_name: ${{ steps.version.outputs.VERSION }}
-        name: "deadman-go ${{ steps.version.outputs.VERSION }}"
+        name: "surveiller ${{ steps.version.outputs.VERSION }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -215,4 +215,4 @@ jobs:
       run: |
         echo "🎉 Release ${{ steps.version.outputs.VERSION }} created successfully!"
         echo "📦 Binaries built for Linux, macOS, and Windows"
-        echo "🔗 Release URL: https://github.com/doridoridoriand/deadman-go/releases/tag/${{ steps.version.outputs.VERSION }}"
+        echo "🔗 Release URL: https://github.com/doridoridoriand/surveiller/releases/tag/${{ steps.version.outputs.VERSION }}"

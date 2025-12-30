@@ -38,7 +38,7 @@ func TestPropertyConfigParsing(t *testing.T) {
 	props.Property("targets and groups are parsed accurately", prop.ForAll(
 		func(spec configSpec) bool {
 			configText, expected := buildConfigFromSpec(spec)
-			parser := DeadmanParser{}
+			parser := SurveillerParser{}
 			path := writeTempConfig(t, configText)
 			cfg, err := parser.LoadConfig(path, CLIOverrides{})
 			if err != nil {
@@ -66,10 +66,10 @@ func TestPropertyDirectiveParsing(t *testing.T) {
 	params.MinSuccessfulTests = 25
 	props := gopter.NewProperties(params)
 
-	props.Property("deadman-go directives map to GlobalOptions", prop.ForAll(
+	props.Property("surveiller directives map to GlobalOptions", prop.ForAll(
 		func(spec directiveSpec) bool {
 			directive := fmt.Sprintf(
-				"# deadman-go: interval=%dms timeout=%dms max_concurrency=%d metrics.mode=%s metrics.listen=%s ui.scale=%d ui.disable=%t\n",
+				"# surveiller: interval=%dms timeout=%dms max_concurrency=%d metrics.mode=%s metrics.listen=%s ui.scale=%d ui.disable=%t\n",
 				spec.IntervalMs,
 				spec.TimeoutMs,
 				spec.MaxConcurrency,
@@ -78,7 +78,7 @@ func TestPropertyDirectiveParsing(t *testing.T) {
 				spec.UIScale,
 				spec.UIDisable,
 			)
-			parser := DeadmanParser{}
+			parser := SurveillerParser{}
 			path := writeTempConfig(t, directive)
 			cfg, err := parser.LoadConfig(path, CLIOverrides{})
 			if err != nil {
@@ -127,7 +127,7 @@ func TestPropertyCommentHandling(t *testing.T) {
 			for i := 0; i < count; i++ {
 				lines = append(lines, "# comment")
 			}
-			parser := DeadmanParser{}
+			parser := SurveillerParser{}
 			path := writeTempConfig(t, strings.Join(lines, "\n"))
 			cfg, err := parser.LoadConfig(path, CLIOverrides{})
 			if err != nil {
@@ -147,7 +147,7 @@ func TestPropertyCommentHandling(t *testing.T) {
 			if token == "" {
 				token = "invalid"
 			}
-			parser := DeadmanParser{}
+			parser := SurveillerParser{}
 			path := writeTempConfig(t, token+"\n")
 			_, err := parser.LoadConfig(path, CLIOverrides{})
 			return err != nil
@@ -172,12 +172,12 @@ func TestPropertyCLIPriority(t *testing.T) {
 				return true
 			}
 			configText := fmt.Sprintf(
-				"# deadman-go: interval=%dms timeout=%dms max_concurrency=%d ui.disable=false\n",
+				"# surveiller: interval=%dms timeout=%dms max_concurrency=%d ui.disable=false\n",
 				intervalMs,
 				timeoutMs,
 				maxConc,
 			)
-			parser := DeadmanParser{}
+			parser := SurveillerParser{}
 			path := writeTempConfig(t, configText)
 
 			overrideInterval := time.Duration(intervalMs+1) * time.Millisecond

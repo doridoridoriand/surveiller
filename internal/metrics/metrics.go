@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/state"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/state"
 )
 
 // Server exposes Prometheus-style metrics based on current state.
@@ -66,11 +66,11 @@ func writeAggregated(w *bufio.Writer, snapshot []state.TargetStatus) {
 			unknownCount++
 		}
 	}
-	fmt.Fprintf(w, "deadman_targets_total %d\n", total)
-	fmt.Fprintf(w, "deadman_targets_ok %d\n", okCount)
-	fmt.Fprintf(w, "deadman_targets_warn %d\n", warnCount)
-	fmt.Fprintf(w, "deadman_targets_down %d\n", downCount)
-	fmt.Fprintf(w, "deadman_targets_unknown %d\n", unknownCount)
+	fmt.Fprintf(w, "surveiller_targets_total %d\n", total)
+	fmt.Fprintf(w, "surveiller_targets_ok %d\n", okCount)
+	fmt.Fprintf(w, "surveiller_targets_warn %d\n", warnCount)
+	fmt.Fprintf(w, "surveiller_targets_down %d\n", downCount)
+	fmt.Fprintf(w, "surveiller_targets_unknown %d\n", unknownCount)
 }
 
 func writePerTarget(w *bufio.Writer, snapshot []state.TargetStatus) {
@@ -85,9 +85,9 @@ func writePerTarget(w *bufio.Writer, snapshot []state.TargetStatus) {
 		if target.Status == state.StatusOK {
 			up = 1
 		}
-		fmt.Fprintf(w, "deadman_target_up{%s} %d\n", labels, up)
+		fmt.Fprintf(w, "surveiller_target_up{%s} %d\n", labels, up)
 		if target.LastRTT > 0 {
-			fmt.Fprintf(w, "deadman_target_rtt_ms{%s} %d\n", labels, target.LastRTT.Milliseconds())
+			fmt.Fprintf(w, "surveiller_target_rtt_ms{%s} %d\n", labels, target.LastRTT.Milliseconds())
 		}
 	}
 }

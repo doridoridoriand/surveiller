@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/ping"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/ping"
 )
 
 func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {

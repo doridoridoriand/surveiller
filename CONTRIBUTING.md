@@ -1,6 +1,6 @@
-# Contributing to deadman-go
+# Contributing to surveiller
 
-Thank you for your interest in contributing to deadman-go! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to surveiller! This document provides guidelines for contributing to the project.
 
 ## Code of Conduct
 
@@ -9,7 +9,7 @@ Please be respectful and constructive in all interactions. We aim to maintain a 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/deadman-go.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/surveiller.git`
 3. Create a feature branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
 5. Test your changes: `make test`
@@ -94,7 +94,7 @@ When contributing platform-specific fixes or improvements:
 When reporting bugs, please include:
 - Operating system and version
 - Go version (if building from source)
-- deadman-go version
+- surveiller version
 - Configuration file (sanitized)
 - Steps to reproduce
 - Expected vs actual behavior
@@ -160,4 +160,4 @@ Releases are managed by project maintainers:
 
 Feel free to open an issue for questions about contributing or project direction.
 
-Thank you for contributing to deadman-go!
+Thank you for contributing to surveiller!

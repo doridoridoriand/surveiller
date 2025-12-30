@@ -10,7 +10,7 @@ We provide security updates for the following versions:
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in deadman-go, please report it responsibly:
+If you discover a security vulnerability in surveiller, please report it responsibly:
 
 ### How to Report
 
@@ -34,15 +34,15 @@ If you discover a security vulnerability in deadman-go, please report it respons
 
 ### Security Considerations
 
-deadman-go handles network operations and may require elevated privileges for ICMP operations. Key security considerations:
+surveiller handles network operations and may require elevated privileges for ICMP operations. Key security considerations:
 
 #### ICMP Privileges
-- deadman-go attempts to use raw ICMP sockets which require CAP_NET_RAW capability on Linux
+- surveiller attempts to use raw ICMP sockets which require CAP_NET_RAW capability on Linux
 - When ICMP privileges are unavailable, it falls back to external `ping` command
 - Consider running with minimal required privileges
 
 #### Network Security
-- deadman-go sends ICMP packets to configured targets
+- surveiller sends ICMP packets to configured targets
 - Ensure target addresses are trusted and expected
 - Be aware that ping operations may be logged by network security systems
 
@@ -58,11 +58,11 @@ deadman-go handles network operations and may require elevated privileges for IC
 
 ## Best Practices
 
-1. **Principle of Least Privilege**: Run deadman-go with minimal required permissions
+1. **Principle of Least Privilege**: Run surveiller with minimal required permissions
 2. **Network Segmentation**: Deploy in appropriate network segments
 3. **Configuration Management**: Protect configuration files and use version control
-4. **Monitoring**: Monitor deadman-go logs for unexpected behavior
-5. **Updates**: Keep deadman-go updated to the latest version
+4. **Monitoring**: Monitor surveiller logs for unexpected behavior
+5. **Updates**: Keep surveiller updated to the latest version
 
 ## Acknowledgments
 

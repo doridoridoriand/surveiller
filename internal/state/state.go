@@ -3,8 +3,8 @@ package state
 import (
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/ping"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/ping"
 )
 
 // Status represents target health.
