@@ -1,4 +1,4 @@
-# surveiller
+# surveiller (formerly deadman-go)
 
 ![surveiller](assets/running.gif)
 
