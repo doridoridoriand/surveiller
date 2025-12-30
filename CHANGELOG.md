@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Clarify platform support levels in documentation
+- Update macOS and Windows builds to experimental status
+- Improve platform-specific documentation and issue reporting guidelines
+
+### Documentation
+- Add platform support matrix with clear support levels (Linux: fully supported, macOS/Windows: experimental)
+- Add platform-specific notes for ICMP privileges and external ping fallback
+- Update contributing guidelines with platform-specific testing requirements
+- Enhance bug reporting template for experimental platforms
+- Update release notes template to include platform support information
+
 ## [0.0.4] - 2025-12-30
 
 ### Added
