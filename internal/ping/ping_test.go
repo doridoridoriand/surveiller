@@ -257,7 +257,7 @@ func TestICMPPingerSequenceIncrement(t *testing.T) {
 
 	// Test that sequence numbers increment by making ping attempts with valid addresses
 	initialSeq := pinger.seq
-	
+
 	// Make multiple ping calls with valid localhost address
 	// Even if they fail due to permissions, the sequence should increment
 	// because the sequence is incremented before the actual network call
@@ -266,13 +266,13 @@ func TestICMPPingerSequenceIncrement(t *testing.T) {
 		// Log the result for debugging but don't fail on ping errors
 		t.Logf("Ping attempt %d: Success=%v, Error=%v", i+1, result.Success, result.Error)
 	}
-	
+
 	// The sequence should have incremented even if pings failed due to permissions
 	if pinger.seq == initialSeq {
 		// If sequence didn't increment, it means the ping failed before reaching the sequence increment
 		// This could happen if there are context errors or IP resolution failures
 		t.Logf("Sequence didn't increment (got %d -> %d), this may indicate early failures", initialSeq, pinger.seq)
-		
+
 		// Try with a simpler test - just verify the atomic increment works
 		// by directly checking if we can create the message
 		testSeq := int(atomic.AddUint32(&pinger.seq, 1))
@@ -395,18 +395,18 @@ func TestFallbackPingerContextPropagation(t *testing.T) {
 	pinger := NewFallbackPinger(primary, secondary)
 
 	result := pinger.Ping(ctx, "127.0.0.1", time.Second)
-	
+
 	// The behavior depends on how the stub pinger handles context
 	// In this case, we're testing that the context is properly passed through
 	if primary.calls != 1 {
 		t.Fatalf("expected primary to be called once, got %d", primary.calls)
 	}
-	
+
 	// Secondary should be called since primary had permission error
 	if secondary.calls != 1 {
 		t.Fatalf("expected secondary to be called once, got %d", secondary.calls)
 	}
-	
+
 	// Log the result for verification
 	t.Logf("Fallback result: Success=%v, RTT=%v, Error=%v", result.Success, result.RTT, result.Error)
 }

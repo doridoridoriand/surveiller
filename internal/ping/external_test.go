@@ -81,10 +81,10 @@ func TestNewExternalPinger(t *testing.T) {
 
 func TestExternalPingerContextCancellation(t *testing.T) {
 	pinger := NewExternalPinger()
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	result := pinger.Ping(ctx, "127.0.0.1", time.Second)
 	if result.Success {
 		t.Fatalf("expected failure due to cancelled context")
@@ -96,11 +96,11 @@ func TestExternalPingerContextCancellation(t *testing.T) {
 
 func TestExternalPingerTimeout(t *testing.T) {
 	pinger := NewExternalPinger()
-	
+
 	// Use a very short timeout to force timeout behavior
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
-	
+
 	result := pinger.Ping(ctx, "127.0.0.1", time.Second)
 	if result.Success {
 		t.Fatalf("expected timeout failure")
@@ -116,13 +116,13 @@ func TestExternalPingerTimeout(t *testing.T) {
 
 func TestExternalPingerInvalidAddress(t *testing.T) {
 	pinger := NewExternalPinger()
-	
+
 	testCases := []string{
 		"invalid@@address",
 		"999.999.999.999",
 		"not.a.real.domain.example.invalid",
 	}
-	
+
 	for _, addr := range testCases {
 		result := pinger.Ping(context.Background(), addr, 100*time.Millisecond)
 		if result.Success {
@@ -136,10 +136,10 @@ func TestExternalPingerInvalidAddress(t *testing.T) {
 
 func TestExternalPingerValidAddress(t *testing.T) {
 	pinger := NewExternalPinger()
-	
+
 	// Test with localhost - this should work on most systems
 	result := pinger.Ping(context.Background(), "127.0.0.1", time.Second)
-	
+
 	// The ping might succeed or fail depending on system configuration
 	// but we should get a proper result structure
 	if result.Success {
@@ -167,7 +167,7 @@ func TestParseRTTVariousFormats(t *testing.T) {
 		{"no time information here", 0},
 		{"", 0},
 	}
-	
+
 	for _, tc := range testCases {
 		result := parseRTT([]byte(tc.output))
 		if result != tc.expected {
@@ -178,28 +178,28 @@ func TestParseRTTVariousFormats(t *testing.T) {
 
 func TestPingArgsVariousTimeouts(t *testing.T) {
 	testCases := []struct {
-		timeout  time.Duration
-		addr     string
+		timeout time.Duration
+		addr    string
 	}{
 		{100 * time.Millisecond, "example.com"},
 		{1 * time.Second, "127.0.0.1"},
 		{5 * time.Second, "google.com"},
 		{10 * time.Millisecond, "test.local"}, // Very short timeout
 	}
-	
+
 	for _, tc := range testCases {
 		args := pingArgs(tc.addr, tc.timeout)
-		
+
 		// Verify basic structure
 		if len(args) < 5 {
 			t.Fatalf("expected at least 5 args for pingArgs(%q, %v), got %v", tc.addr, tc.timeout, args)
 		}
-		
+
 		// Verify address is included
 		if args[len(args)-1] != tc.addr {
 			t.Fatalf("expected last arg to be address %q, got %q", tc.addr, args[len(args)-1])
 		}
-		
+
 		// Verify standard flags are present
 		expectedFlags := []string{"-n", "-c", "1", "-W"}
 		for i, flag := range expectedFlags {
@@ -212,14 +212,14 @@ func TestPingArgsVariousTimeouts(t *testing.T) {
 
 func TestExternalPingerCommandConstruction(t *testing.T) {
 	pinger := NewExternalPinger()
-	
+
 	// This test verifies that the external pinger can construct commands properly
 	// We'll test with a short timeout to avoid long waits
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	
+
 	result := pinger.Ping(ctx, "127.0.0.1", 100*time.Millisecond)
-	
+
 	// We expect this to timeout or fail, but not panic
 	if result.Success {
 		t.Logf("Unexpected success: %v", result.RTT)
