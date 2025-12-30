@@ -1,4 +1,4 @@
-module github.com/doridoridoriand/deadman-go
+module github.com/doridoridoriand/surveiller
 
 go 1.24.0
 

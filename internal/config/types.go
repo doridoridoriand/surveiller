@@ -49,6 +49,6 @@ type CLIOverrides struct {
 // Parser defines config parsing behavior.
 type Parser interface {
 	LoadConfig(path string, overrides CLIOverrides) (*Config, error)
-	ParseDeadmanGoDirective(line string) (map[string]string, error)
+	ParseSurveillerDirective(line string) (map[string]string, error)
 	ParseTargetLine(line string, group string) (TargetConfig, error)
 }

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/ipv6"
 )
 
-const echoData = "deadman-go"
+const echoData = "surveiller"
 
 // ICMPPinger sends ICMP echo requests using raw sockets.
 type ICMPPinger struct {

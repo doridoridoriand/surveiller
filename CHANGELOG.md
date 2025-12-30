@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to deadman-go will be documented in this file.
+All notable changes to surveiller will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test coverage tracking and improvement documentation
 
 ### Changed
-- Translate Japanese comments to English in sample configuration file (deadman.sample.conf)
+- Translate Japanese comments to English in sample configuration file (surveiller.sample.conf)
 - Update Go version from 1.24.11 to stable 1.23.4 in CI workflow
 - Enhance clean command to remove test and module caches (-testcache, -modcache)
 - Improve test separation with build tags for property tests
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add RTT label and LOSS percentage display to TUI
 - Display current configuration in TUI header (interval, timeout, max_concurrency, ui.scale)
 - Add clean-build target to Makefile
-- Add sample configuration file (deadman.sample.conf)
+- Add sample configuration file (surveiller.sample.conf)
 - Add demo recording and README preview
 
 ### Changed

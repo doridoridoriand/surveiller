@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Simple release script for deadman-go
+# Simple release script for surveiller
 # Usage: ./scripts/release.sh v0.0.1
 
 set -e
@@ -64,7 +64,7 @@ fi
 
 # Test the built binary
 echo "🔍 Testing built binary"
-if ! ./bin/deadman-go -version; then
+if ! ./bin/surveiller -version; then
     echo "❌ Binary test failed. Aborting release."
     exit 1
 fi
@@ -74,7 +74,7 @@ echo "🏷️  Creating tag $VERSION"
 if [ "$VERSION" = "v0.0.1" ]; then
     TAG_MESSAGE="Release $VERSION
 
-🎉 Initial release of deadman-go
+🎉 Initial release of surveiller
 
 Features:
 - Go implementation of deadman ping monitoring
@@ -106,11 +106,11 @@ fi
 
 echo ""
 echo "✅ Release $VERSION has been created!"
-echo "🔗 Check the release at: https://github.com/doridoridoriand/deadman-go/releases/tag/$VERSION"
+echo "🔗 Check the release at: https://github.com/doridoridoriand/surveiller/releases/tag/$VERSION"
 echo "⏳ GitHub Actions will build and publish the binaries automatically."
 echo ""
 echo "📊 You can monitor the build progress at:"
-echo "   https://github.com/doridoridoriand/deadman-go/actions"
+echo "   https://github.com/doridoridoriand/surveiller/actions"
 echo ""
 echo "🔄 Returning to original branch: $CURRENT_BRANCH"
 if [ "$CURRENT_BRANCH" != "main" ]; then

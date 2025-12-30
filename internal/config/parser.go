@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// DeadmanParser implements the Parser interface.
-type DeadmanParser struct{}
+// SurveillerParser implements the Parser interface.
+type SurveillerParser struct{}
 
 // DefaultGlobalOptions returns baseline settings used before config overrides.
 func DefaultGlobalOptions() GlobalOptions {
@@ -25,8 +25,8 @@ func DefaultGlobalOptions() GlobalOptions {
 	}
 }
 
-// LoadConfig parses a deadman.conf file with CLI overrides applied.
-func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config, error) {
+// LoadConfig parses a surveiller.conf file with CLI overrides applied.
+func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config,
 		}
 
 		if strings.HasPrefix(line, "#") {
-			if strings.HasPrefix(line, "# deadman-go:") {
-				pairs, err := p.ParseDeadmanGoDirective(line)
+			if strings.HasPrefix(line, "# surveiller:") {
+				pairs, err := p.ParseSurveillerDirective(line)
 				if err != nil {
 					return nil, err
 				}
@@ -58,8 +58,8 @@ func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config,
 			continue
 		}
 
-		if strings.HasPrefix(line, "deadman-go:") {
-			pairs, err := p.ParseDeadmanGoDirective(line)
+		if strings.HasPrefix(line, "surveiller:") {
+			pairs, err := p.ParseSurveillerDirective(line)
 			if err != nil {
 				return nil, err
 			}
@@ -94,15 +94,15 @@ func (p DeadmanParser) LoadConfig(path string, overrides CLIOverrides) (*Config,
 	return cfg, nil
 }
 
-// ParseDeadmanGoDirective extracts key=value pairs from a directive line.
-func (p DeadmanParser) ParseDeadmanGoDirective(line string) (map[string]string, error) {
+// ParseSurveillerDirective extracts key=value pairs from a directive line.
+func (p SurveillerParser) ParseSurveillerDirective(line string) (map[string]string, error) {
 	trimmed := strings.TrimSpace(line)
 	if strings.HasPrefix(trimmed, "#") {
 		trimmed = strings.TrimSpace(strings.TrimPrefix(trimmed, "#"))
-	} else if !strings.HasPrefix(trimmed, "deadman-go:") {
-		return nil, fmt.Errorf("directive line must start with '# deadman-go:' or 'deadman-go:': %q", line)
+	} else if !strings.HasPrefix(trimmed, "surveiller:") {
+		return nil, fmt.Errorf("directive line must start with '# surveiller:' or 'surveiller:': %q", line)
 	}
-	payload := strings.TrimSpace(strings.TrimPrefix(trimmed, "deadman-go:"))
+	payload := strings.TrimSpace(strings.TrimPrefix(trimmed, "surveiller:"))
 	if payload == "" {
 		return map[string]string{}, nil
 	}
@@ -119,7 +119,7 @@ func (p DeadmanParser) ParseDeadmanGoDirective(line string) (map[string]string, 
 }
 
 // ParseTargetLine parses a single target definition.
-func (p DeadmanParser) ParseTargetLine(line string, group string) (TargetConfig, error) {
+func (p SurveillerParser) ParseTargetLine(line string, group string) (TargetConfig, error) {
 	fields := strings.Fields(line)
 	if len(fields) < 2 {
 		return TargetConfig{}, fmt.Errorf("invalid target line: %q", line)

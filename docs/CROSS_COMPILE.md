@@ -2,7 +2,7 @@
 
 ## 現在の手法
 
-deadman-goでは、UbuntuランナーでGoのクロスコンパイル機能を使用してmacOS用バイナリをビルドしています。
+surveillerでは、UbuntuランナーでGoのクロスコンパイル機能を使用してmacOS用バイナリをビルドしています。
 
 ## なぜ問題ないのか
 
@@ -11,7 +11,7 @@ deadman-goでは、UbuntuランナーでGoのクロスコンパイル機能を�
 - `GOOS`と`GOARCH`環境変数で簡単にターゲットプラットフォーム指定可能
 - CGOを使用しない限り、完全にクロスプラットフォーム対応
 
-### 2. deadman-goの依存関係
+### 2. surveillerの依存関係
 使用している全ての依存関係はPure Goライブラリ：
 - `github.com/gdamore/tcell/v2` - Pure Go TUIライブラリ
 - `github.com/leanovate/gopter` - Pure Go プロパティベーステスト
@@ -74,8 +74,8 @@ file dist/*
 リリース前にmacOS環境での手動テスト：
 ```bash
 # macOS環境で実行
-./deadman-go-darwin-amd64 -version
-./deadman-go-darwin-arm64 -version
+./surveiller-darwin-amd64 -version
+./surveiller-darwin-arm64 -version
 ```
 
 ### 3. コミュニティフィードバック
@@ -86,7 +86,7 @@ file dist/*
 
 **現在の手法は適切で業界標準です。**
 
-deadman-goのようなネットワークツールでは：
+surveillerのようなネットワークツールでは：
 - Pure Goライブラリのみ使用
 - OS固有の低レベル機能は使用しない
 - クロスコンパイルで十分な品質を確保可能

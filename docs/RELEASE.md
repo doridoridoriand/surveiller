@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes the release process for deadman-go.
+This document describes the release process for surveiller.
 
 ## Overview
 
@@ -87,11 +87,11 @@ We follow [Semantic Versioning](https://semver.org/):
 Each release includes:
 
 ### Binaries
-- `deadman-go-linux-amd64` - Linux x86_64
-- `deadman-go-linux-arm64` - Linux ARM64
-- `deadman-go-darwin-amd64` - macOS Intel
-- `deadman-go-darwin-arm64` - macOS Apple Silicon
-- `deadman-go-windows-amd64.exe` - Windows x86_64
+- `surveiller-linux-amd64` - Linux x86_64
+- `surveiller-linux-arm64` - Linux ARM64
+- `surveiller-darwin-amd64` - macOS Intel
+- `surveiller-darwin-arm64` - macOS Apple Silicon
+- `surveiller-windows-amd64.exe` - Windows x86_64
 
 ### Checksums
 - `checksums.txt` - SHA256 checksums for all binaries
@@ -118,7 +118,7 @@ make test-all
 make build
 
 # Test the binary
-./bin/deadman-go -version
+./bin/surveiller -version
 
 # Cross-compile test
 make release

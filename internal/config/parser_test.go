@@ -10,7 +10,7 @@ import (
 func writeTempConfig(t *testing.T, content string) string {
 	t.Helper()
 	dir := t.TempDir()
-	path := filepath.Join(dir, "deadman.conf")
+	path := filepath.Join(dir, "surveiller.conf")
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write temp config: %v", err)
 	}
@@ -19,14 +19,14 @@ func writeTempConfig(t *testing.T, content string) string {
 
 func TestLoadConfigParsesTargetsAndGroups(t *testing.T) {
 	configText := "" +
-		"# deadman-go: interval=2s timeout=1500ms max_concurrency=50 ui.scale=25 ui.disable=true\n" +
+		"# surveiller: interval=2s timeout=1500ms max_concurrency=50 ui.scale=25 ui.disable=true\n" +
 		"google 216.58.197.174\n" +
 		"googleDNS 8.8.8.8\n" +
 		"---\n" +
 		"kame 203.178.141.194\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	cfg, err := parser.LoadConfig(path, CLIOverrides{})
 	if err != nil {
@@ -68,7 +68,7 @@ func TestLoadConfigParsesNamedGroup(t *testing.T) {
 		"public 1.1.1.1\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	cfg, err := parser.LoadConfig(path, CLIOverrides{})
 	if err != nil {
@@ -84,11 +84,11 @@ func TestLoadConfigParsesNamedGroup(t *testing.T) {
 
 func TestLoadConfigParsesDirectiveWithoutComment(t *testing.T) {
 	configText := "" +
-		"deadman-go: interval=3s metrics.listen=9100\n" +
+		"surveiller: interval=3s metrics.listen=9100\n" +
 		"example 192.0.2.1\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	cfg, err := parser.LoadConfig(path, CLIOverrides{})
 	if err != nil {
@@ -109,7 +109,7 @@ func TestLoadConfigIgnoresComments(t *testing.T) {
 		"example 192.0.2.1\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	cfg, err := parser.LoadConfig(path, CLIOverrides{})
 	if err != nil {
@@ -125,7 +125,7 @@ func TestLoadConfigRejectsInvalidTargetLine(t *testing.T) {
 		"invalidline\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	if _, err := parser.LoadConfig(path, CLIOverrides{}); err == nil {
 		t.Fatalf("expected error for invalid target line")
@@ -134,11 +134,11 @@ func TestLoadConfigRejectsInvalidTargetLine(t *testing.T) {
 
 func TestLoadConfigRejectsInvalidDirective(t *testing.T) {
 	configText := "" +
-		"# deadman-go: interval=notaduration\n" +
+		"# surveiller: interval=notaduration\n" +
 		"example 192.0.2.1\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	if _, err := parser.LoadConfig(path, CLIOverrides{}); err == nil {
 		t.Fatalf("expected error for invalid directive")
@@ -147,11 +147,11 @@ func TestLoadConfigRejectsInvalidDirective(t *testing.T) {
 
 func TestLoadConfigAppliesCLIOverrides(t *testing.T) {
 	configText := "" +
-		"# deadman-go: interval=2s timeout=1500ms max_concurrency=50 ui.disable=false\n" +
+		"# surveiller: interval=2s timeout=1500ms max_concurrency=50 ui.disable=false\n" +
 		"example 192.0.2.1\n"
 
 	path := writeTempConfig(t, configText)
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 
 	interval := 5 * time.Second
 	timeout := 500 * time.Millisecond
@@ -179,7 +179,7 @@ func TestLoadConfigAppliesCLIOverrides(t *testing.T) {
 }
 
 func TestParseTargetLineOptions(t *testing.T) {
-	parser := DeadmanParser{}
+	parser := SurveillerParser{}
 	target, err := parser.ParseTargetLine("relay1 192.0.2.10 relay=jump1 user=foo", "group-1")
 	if err != nil {
 		t.Fatalf("ParseTargetLine error: %v", err)

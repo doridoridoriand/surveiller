@@ -12,7 +12,7 @@ import (
 	"github.com/leanovate/gopter/prop"
 )
 
-// **Feature: deadman-go, Property 6: タイムアウト処理**
+// **Feature: surveiller, Property 6: タイムアウト処理**
 // **Validates: Requirements 2.5**
 func TestTimeoutHandlingProperty(t *testing.T) {
 	properties := gopter.NewProperties(nil)
@@ -69,7 +69,7 @@ func TestTimeoutHandlingProperty(t *testing.T) {
 	properties.TestingRun(t, gopter.ConsoleReporter(false))
 }
 
-// **Feature: deadman-go, Property 6: タイムアウト処理**
+// **Feature: surveiller, Property 6: タイムアウト処理**
 // **Validates: Requirements 2.5**
 func TestTimeoutBehaviorProperty(t *testing.T) {
 	properties := gopter.NewProperties(nil)
@@ -110,7 +110,7 @@ func TestTimeoutBehaviorProperty(t *testing.T) {
 	properties.TestingRun(t, gopter.ConsoleReporter(false))
 }
 
-// **Feature: deadman-go, Property 6: タイムアウト処理**
+// **Feature: surveiller, Property 6: タイムアウト処理**
 // **Validates: Requirements 2.5**
 func TestEffectiveDeadlineProperty(t *testing.T) {
 	properties := gopter.NewProperties(nil)

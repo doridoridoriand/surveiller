@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/doridoridoriand/deadman-go/internal/config"
-	"github.com/doridoridoriand/deadman-go/internal/ping"
-	"github.com/doridoridoriand/deadman-go/internal/state"
+	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/ping"
+	"github.com/doridoridoriand/surveiller/internal/state"
 )
 
 func TestSchedulerMaxConcurrency(t *testing.T) {
