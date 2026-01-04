@@ -159,7 +159,7 @@ func TestOptionalMetricsMode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var m OptionalMetricsMode
-			
+
 			// Test initial state
 			if m.String() != "" {
 				t.Fatalf("expected empty string for unset MetricsMode")
@@ -205,7 +205,7 @@ func TestOptionalMetricsModeErrorMessages(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error for invalid metrics mode")
 	}
-	
+
 	expectedMsg := `invalid metrics mode: "invalid-mode" (valid values: per-target, aggregated, both)`
 	if err.Error() != expectedMsg {
 		t.Fatalf("expected error message %q, got %q", expectedMsg, err.Error())

@@ -172,7 +172,7 @@ func TestHandlerPerTargetMode(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
-	
+
 	body := rec.Body.String()
 	// Should contain per-target metrics
 	if !strings.Contains(body, "surveiller_target_up{") {
@@ -204,7 +204,7 @@ func TestHandlerAggregatedMode(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
-	
+
 	body := rec.Body.String()
 	// Should contain aggregated metrics
 	if !strings.Contains(body, "surveiller_targets_total 3") {
@@ -246,7 +246,7 @@ func TestHandlerBothMode(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
-	
+
 	body := rec.Body.String()
 	// Should contain both aggregated and per-target metrics
 	if !strings.Contains(body, "surveiller_targets_total 1") {
@@ -270,7 +270,7 @@ func TestHandlerEmptyMode(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
-	
+
 	body := rec.Body.String()
 	// Should be empty (no metrics)
 	if strings.TrimSpace(body) != "" {
@@ -366,12 +366,12 @@ func TestWritePerTargetVariousStatuses(t *testing.T) {
 	_ = writer.Flush()
 
 	output := buf.String()
-	
+
 	// Check that OK target has up=1
 	if !strings.Contains(output, `surveiller_target_up{target="ok_target",address="1.1.1.1",group="group1"} 1`) {
 		t.Errorf("expected OK target to have up=1, got %q", output)
 	}
-	
+
 	// Check that non-OK targets have up=0
 	if !strings.Contains(output, `surveiller_target_up{target="warn_target",address="2.2.2.2",group="group1"} 0`) {
 		t.Errorf("expected WARN target to have up=0, got %q", output)
@@ -382,7 +382,7 @@ func TestWritePerTargetVariousStatuses(t *testing.T) {
 	if !strings.Contains(output, `surveiller_target_up{target="unknown_target",address="4.4.4.4",group=""} 0`) {
 		t.Errorf("expected UNKNOWN target to have up=0, got %q", output)
 	}
-	
+
 	// Check RTT metrics are only present for targets with LastRTT > 0
 	if !strings.Contains(output, `surveiller_target_rtt_ms{target="ok_target",address="1.1.1.1",group="group1"} 10`) {
 		t.Errorf("expected RTT metric for OK target, got %q", output)
@@ -390,7 +390,7 @@ func TestWritePerTargetVariousStatuses(t *testing.T) {
 	if !strings.Contains(output, `surveiller_target_rtt_ms{target="warn_target",address="2.2.2.2",group="group1"} 50`) {
 		t.Errorf("expected RTT metric for WARN target, got %q", output)
 	}
-	
+
 	// Check that targets with 0 RTT don't have RTT metrics
 	if strings.Contains(output, `surveiller_target_rtt_ms{target="down_target"`) {
 		t.Errorf("should not have RTT metric for DOWN target with 0 RTT, got %q", output)
@@ -412,7 +412,7 @@ func TestWriteAggregatedAllStatuses(t *testing.T) {
 		{Status: state.StatusUnknown},
 		{Status: state.StatusUnknown},
 	}
-	
+
 	var buf bytes.Buffer
 	writer := bufio.NewWriter(&buf)
 	writeAggregated(writer, snapshot)
@@ -427,7 +427,7 @@ func TestWriteAggregatedAllStatuses(t *testing.T) {
 		"surveiller_targets_unknown 2",
 		"",
 	}, "\n")
-	
+
 	if got != expected {
 		t.Errorf("unexpected aggregated metrics:\ngot:\n%s\nexpected:\n%s", got, expected)
 	}
@@ -437,11 +437,11 @@ func TestWriteAggregatedAllStatuses(t *testing.T) {
 func TestWriteMetricsEmptySnapshot(t *testing.T) {
 	var buf bytes.Buffer
 	writer := bufio.NewWriter(&buf)
-	
+
 	// Test aggregated with empty snapshot
 	writeAggregated(writer, []state.TargetStatus{})
 	_ = writer.Flush()
-	
+
 	expected := strings.Join([]string{
 		"surveiller_targets_total 0",
 		"surveiller_targets_ok 0",
@@ -450,17 +450,17 @@ func TestWriteMetricsEmptySnapshot(t *testing.T) {
 		"surveiller_targets_unknown 0",
 		"",
 	}, "\n")
-	
+
 	if buf.String() != expected {
 		t.Errorf("unexpected empty aggregated metrics:\n%s", buf.String())
 	}
-	
+
 	// Test per-target with empty snapshot
 	buf.Reset()
 	writer = bufio.NewWriter(&buf)
 	writePerTarget(writer, []state.TargetStatus{})
 	_ = writer.Flush()
-	
+
 	if buf.String() != "" {
 		t.Errorf("expected empty per-target metrics, got %q", buf.String())
 	}
@@ -471,13 +471,13 @@ func TestServeStartupShutdown(t *testing.T) {
 	store := fakeStore{
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	
+
 	// Use port 0 to get a random available port
 	err := Serve(ctx, "127.0.0.1:0", config.MetricsModeAggregated, store)
-	
+
 	// Should return context.Canceled when context is cancelled
 	if err != context.Canceled && err != context.DeadlineExceeded {
 		t.Fatalf("expected context cancellation or deadline exceeded, got %v", err)
@@ -489,13 +489,13 @@ func TestServeInvalidAddress(t *testing.T) {
 	store := fakeStore{
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	
+
 	// Use an invalid address format
 	err := Serve(ctx, "invalid-address", config.MetricsModeAggregated, store)
-	
+
 	// Should return an error (not context cancellation)
 	if err == nil {
 		t.Fatalf("expected error for invalid address")
@@ -513,13 +513,13 @@ func TestHandlerResponseHeaders(t *testing.T) {
 	server := NewServer(config.MetricsModeAggregated, store)
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	rec := httptest.NewRecorder()
-	
+
 	server.Handler().ServeHTTP(rec, req)
-	
+
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
 	}
-	
+
 	expectedContentType := "text/plain; version=0.0.4"
 	if contentType := rec.Header().Get("Content-Type"); contentType != expectedContentType {
 		t.Fatalf("expected content type %q, got %q", expectedContentType, contentType)
@@ -532,16 +532,16 @@ func TestHandlerUnsupportedMethods(t *testing.T) {
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
 	server := NewServer(config.MetricsModeAggregated, store)
-	
+
 	methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-	
+
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
 			req := httptest.NewRequest(method, "/metrics", nil)
 			rec := httptest.NewRecorder()
-			
+
 			server.Handler().ServeHTTP(rec, req)
-			
+
 			if rec.Code != http.StatusMethodNotAllowed {
 				t.Fatalf("expected status 405 for %s method, got %d", method, rec.Code)
 			}
@@ -554,13 +554,13 @@ func TestServePortAlreadyInUse(t *testing.T) {
 	store := fakeStore{
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	
+
 	// Try to start server on an invalid port to trigger an error
 	err := Serve(ctx, "127.0.0.1:99999", config.MetricsModeAggregated, store)
-	
+
 	// Should return some kind of error (either bind error or context timeout)
 	if err == nil {
 		t.Fatalf("expected error when starting server on invalid port")
@@ -572,11 +572,11 @@ func TestHandlerDifferentPaths(t *testing.T) {
 	store := fakeStore{
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
-	
+
 	// Create a full mux like in the Serve function
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", NewServer(config.MetricsModeAggregated, store).Handler())
-	
+
 	tests := []struct {
 		path           string
 		expectedStatus int
@@ -586,14 +586,14 @@ func TestHandlerDifferentPaths(t *testing.T) {
 		{"/health", http.StatusNotFound},
 		{"/metrics/extra", http.StatusNotFound}, // Should not match
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
 			rec := httptest.NewRecorder()
-			
+
 			mux.ServeHTTP(rec, req)
-			
+
 			if rec.Code != tt.expectedStatus {
 				t.Fatalf("expected status %d for path %s, got %d", tt.expectedStatus, tt.path, rec.Code)
 			}
@@ -606,21 +606,21 @@ func TestServeGracefulShutdown(t *testing.T) {
 	store := fakeStore{
 		snapshot: []state.TargetStatus{{Status: state.StatusOK}},
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Start server in goroutine
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- Serve(ctx, "127.0.0.1:0", config.MetricsModeAggregated, store)
 	}()
-	
+
 	// Give server time to start
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// Cancel context to trigger shutdown
 	cancel()
-	
+
 	// Wait for server to shutdown
 	select {
 	case err := <-errCh:
