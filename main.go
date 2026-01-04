@@ -88,6 +88,48 @@ func main() {
 	ctx, cancel := signalContext()
 	defer cancel()
 
+	reloadCh := make(chan struct{}, 1)
+	reload := func() error {
+		newCfg, err := parser.LoadConfig(configPath, overrides)
+		if err != nil {
+			return err
+		}
+		sched.UpdateConfig(newCfg.Global, newCfg.Targets)
+		store.UpdateTargets(newCfg.Targets)
+		store.UpdateTimeout(newCfg.Global.Timeout)
+		return nil
+	}
+
+	var reloadWg sync.WaitGroup
+	reloadWg.Add(1)
+	go func() {
+		defer reloadWg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-reloadCh:
+				if err := reload(); err != nil {
+					fmt.Fprintf(os.Stderr, "failed to reload config: %v\n", err)
+				}
+			}
+		}
+	}()
+
+	go func() {
+		hupCh := make(chan os.Signal, 1)
+		signal.Notify(hupCh, syscall.SIGHUP)
+		defer signal.Stop(hupCh)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-hupCh:
+				requestReload(reloadCh)
+			}
+		}
+	}()
+
 	var wg sync.WaitGroup
 	if cfg.Global.MetricsListen != "" {
 		wg.Add(1)
@@ -116,7 +158,7 @@ func main() {
 		}()
 		<-ctx.Done()
 	} else {
-		ui := ui.New(cfg.Global, store)
+		ui := ui.New(cfg.Global, store, reloadCh)
 		if err := ui.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
 			fmt.Fprintf(os.Stderr, "ui error: %v\n", err)
 			cancel()
@@ -124,6 +166,7 @@ func main() {
 	}
 
 	wg.Wait()
+	reloadWg.Wait()
 }
 
 func buildOverrides(
@@ -173,6 +216,13 @@ func signalContext() (context.Context, context.CancelFunc) {
 		cancel()
 	}()
 	return ctx, cancel
+}
+
+func requestReload(ch chan<- struct{}) {
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
 }
 
 func runTextReporter(ctx context.Context, store state.Store) {
