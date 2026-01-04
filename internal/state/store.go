@@ -128,6 +128,13 @@ func (s *StoreImpl) UpdateTargets(targets []config.TargetConfig) {
 	s.targets = updated
 }
 
+// UpdateTimeout updates the timeout used for RTT threshold calculations.
+func (s *StoreImpl) UpdateTimeout(timeout time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.timeout = timeout
+}
+
 // GetTargetStatus returns a copy of a single target status.
 func (s *StoreImpl) GetTargetStatus(name string) (TargetStatus, bool) {
 	s.mu.RLock()

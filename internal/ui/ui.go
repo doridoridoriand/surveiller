@@ -20,13 +20,14 @@ const (
 
 // UI renders a TUI view of target status.
 type UI struct {
-	cfg   config.GlobalOptions
-	state state.Store
+	cfg      config.GlobalOptions
+	state    state.Store
+	reloadCh chan<- struct{}
 }
 
 // New returns a UI instance.
-func New(cfg config.GlobalOptions, store state.Store) *UI {
-	return &UI{cfg: cfg, state: store}
+func New(cfg config.GlobalOptions, store state.Store, reloadCh chan<- struct{}) *UI {
+	return &UI{cfg: cfg, state: store, reloadCh: reloadCh}
 }
 
 // Run blocks until the context is cancelled or the user quits.
@@ -72,6 +73,9 @@ func (u *UI) Run(ctx context.Context) error {
 				if ev.Key() == tcell.KeyCtrlC || ev.Rune() == 'q' {
 					return context.Canceled
 				}
+				if ev.Rune() == 'r' || ev.Rune() == 'R' {
+					u.requestReload()
+				}
 			case *tcell.EventResize:
 				screen.Sync()
 			}
@@ -90,7 +94,7 @@ func (u *UI) render(screen tcell.Screen, snapshot []state.TargetStatus) {
 	}
 
 	now := time.Now().Format("2006-01-02 15:04:05")
-	header := fmt.Sprintf(" surveiller  %s  (q to quit)", now)
+	header := fmt.Sprintf(" surveiller  %s  (q to quit, r to reload)", now)
 	drawText(screen, 0, 0, width, header, tcell.StyleDefault.Bold(true))
 
 	// 設定情報を2行目に表示
@@ -112,6 +116,16 @@ func (u *UI) render(screen tcell.Screen, snapshot []state.TargetStatus) {
 	}
 
 	screen.Show()
+}
+
+func (u *UI) requestReload() {
+	if u.reloadCh == nil {
+		return
+	}
+	select {
+	case u.reloadCh <- struct{}{}:
+	default:
+	}
 }
 
 type targetGroup struct {

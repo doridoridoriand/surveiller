@@ -28,7 +28,7 @@ func main() {
 		flagInterval       cli.OptionalDuration
 		flagTimeout        cli.OptionalDuration
 		flagMaxConcurrency cli.OptionalInt
-		flagMetricsMode    cli.OptionalString
+		flagMetricsMode    cli.OptionalMetricsMode
 		flagMetricsListen  cli.OptionalString
 		flagNoUI           cli.OptionalBool
 		flagVersion        bool
@@ -130,7 +130,7 @@ func buildOverrides(
 	interval cli.OptionalDuration,
 	timeout cli.OptionalDuration,
 	maxConcurrency cli.OptionalInt,
-	metricsMode cli.OptionalString,
+	metricsMode cli.OptionalMetricsMode,
 	metricsListen cli.OptionalString,
 	noUI cli.OptionalBool,
 ) config.CLIOverrides {
@@ -148,8 +148,8 @@ func buildOverrides(
 		value := v
 		overrides.MaxConcurrency = &value
 	}
-	if v, ok := metricsMode.Value(); ok && v != "" {
-		value := config.MetricsMode(v)
+	if v, ok := metricsMode.Value(); ok {
+		value := v
 		overrides.MetricsMode = &value
 	}
 	if v, ok := metricsListen.Value(); ok && v != "" {

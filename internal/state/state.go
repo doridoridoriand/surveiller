@@ -44,5 +44,6 @@ type Store interface {
 	UpdateResult(name string, result ping.Result)
 	GetSnapshot() []TargetStatus
 	UpdateTargets(targets []config.TargetConfig)
+	UpdateTimeout(timeout time.Duration)
 	GetTargetStatus(name string) (TargetStatus, bool)
 }
