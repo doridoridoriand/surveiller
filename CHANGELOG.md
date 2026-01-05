@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-01-05
+
+### Added
+- Configuration reload functionality via SIGHUP signal and 'r' key in TUI
+- OptionalMetricsMode type for type-safe metrics mode flag validation
+- UpdateTimeout method to state.Store interface for dynamic timeout updates
+- Comprehensive tests for CLI flags validation and error handling
+- Expanded metrics package test coverage (per-target, aggregated, both modes, label escaping, HTTP server handling)
+
+### Changed
+- Update UI header to show reload instruction
+- Improve error messages for invalid metrics mode values
+
+### Fixed
+- Fix missing reload functionality implementation in main.go
+- Fix build error where ui.New was called with incorrect number of arguments
+
+### Testing
+- Add comprehensive tests for OptionalMetricsMode validation
+- Add tests for all flag types error handling and string representation
+- Add tests for metrics HTTP server startup, shutdown, and error handling
+- Add tests for empty snapshot and various status combinations
+- Add tests for unsupported HTTP methods and different paths
+
+### Documentation
+- Update test coverage improvement tasks status
+
+### Style
+- Apply gofmt formatting fixes to test files
+- Remove trailing whitespace from test files
+
 ## [0.0.5] - 2025-12-31
 
 ### Changed
