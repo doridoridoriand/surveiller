@@ -614,14 +614,16 @@ func (s *Scheduler) UpdateConfig(global GlobalOptions, targets []TargetConfig) {
 1. **Name**: ターゲット名（ラベル）
 2. **Address**: IPアドレス
 3. **Status**: ステータス（OK / WARN / DOWN / UNKNOWN）
-4. **RTT**: 平均RTT（Historyから計算）に「RTT:」ラベルを付与
+4. **RTT**: 最新RTTに「RTT:」ラベルを付与
    - 表示形式: `RTT:XXms` または `RTT:XX.Xs` など
+5. **AVG**: 平均RTT（Historyから計算）に「AVG:」ラベルを付与
+   - 表示形式: `AVG:XXms` または `AVG:XX.Xs` など
    - Historyが空の場合は`LastRTT`を使用
-5. **LOSS**: パケットロス率をパーセンテージで表示
+6. **LOSS**: パケットロス率をパーセンテージで表示
    - 表示形式: `LOSS:XX.X%`
    - 計算式: `(TotalFailure / (TotalSuccess + TotalFailure)) × 100`
    - 成功/失敗が0件の場合は`0.0%`を表示
-6. **RTT Bar**: RTTの視覚的なバーグラフ（`ui.scale`でスケール調整可能）
+7. **RTT Bar**: RTTの視覚的なバーグラフ（`ui.scale`でスケール調整可能）
 
 ```go
 type UIConfig struct {

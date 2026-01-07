@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-01-08
+
+### Changed
+- Separate latest RTT and average RTT display in TUI
+  - Show latest RTT with "RTT:" label prefix
+  - Show average RTT with "AVG:" label prefix
+  - Both values are displayed side by side in the target line
+
+### Testing
+- Add test for formatTargetLine to verify latest RTT and average RTT display
+
+### Documentation
+- Update README.md to document separate RTT and AVG display in TUI
+- Update design documentation to reflect latest RTT and average RTT separation
+
 ## [0.0.6] - 2026-01-05
 
 ### Added
