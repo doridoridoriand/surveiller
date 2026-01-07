@@ -195,10 +195,10 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 	addr := padOrTrim(target.Address, minInt(18, width))
 	status := padOrTrim(string(target.Status), 6)
 
-	// 平均RTTを計算
+	rtt := padOrTrim(fmt.Sprintf("RTT:%s", formatRTT(target.LastRTT)), 12)
+
 	avgRTT := calculateAvgRTT(target)
-	rttLabel := "RTT:"
-	rtt := padOrTrim(fmt.Sprintf("%s%s", rttLabel, formatRTT(avgRTT)), 12)
+	avg := padOrTrim(fmt.Sprintf("AVG:%s", formatRTT(avgRTT)), 12)
 
 	// LOSS率を計算して表示
 	lossPercent := calculateLossPercent(target)
@@ -212,6 +212,8 @@ func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune
 		{text: status, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},
 		{text: rtt, style: tcell.StyleDefault},
+		{text: " ", style: tcell.StyleDefault},
+		{text: avg, style: tcell.StyleDefault},
 		{text: " ", style: tcell.StyleDefault},
 		{text: loss, style: statusStyle},
 		{text: " ", style: tcell.StyleDefault},

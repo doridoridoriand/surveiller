@@ -173,13 +173,14 @@ The TUI displays the following information for each target:
    - Yellow: WARN
    - Red: DOWN
    - Gray: UNKNOWN
-4. **RTT**: Average RTT with label prefix (`RTT:XXms` or `RTT:XX.Xs`)
+4. **RTT**: Latest RTT with label prefix (`RTT:XXms` or `RTT:XX.Xs`)
+5. **AVG**: Average RTT with label prefix (`AVG:XXms` or `AVG:XX.Xs`)
    - Calculated from ping history
    - Falls back to last RTT if history is empty
-5. **LOSS**: Packet loss percentage (`LOSS:XX.X%`)
+6. **LOSS**: Packet loss percentage (`LOSS:XX.X%`)
    - Calculated as: `(TotalFailures / (TotalSuccesses + TotalFailures)) × 100`
    - Shows `0.0%` when no pings have been executed
-6. **RTT Bar**: Visual bar graph representing RTT (scaled by `ui.scale` setting)
+7. **RTT Bar**: Visual bar graph representing RTT (scaled by `ui.scale` setting)
 
 ## Prometheus Metrics
 
