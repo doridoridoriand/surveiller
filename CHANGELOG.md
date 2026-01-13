@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-01-13
+
+### Fixed
+- Fix IPv6 ping monitoring on macOS
+  - Use `ping6` command for IPv6 addresses on macOS instead of `ping` command
+  - Remove `-W` option for IPv6 addresses as macOS `ping6` doesn't support it
+  - Timeout is now handled by context cancellation for IPv6 pings on macOS
+
+### Changed
+- Improve IPv6 address detection to support both direct IP addresses and hostnames
+- Update ping command selection logic to automatically use appropriate command based on address type
+
+### Testing
+- Add tests for IPv6 address detection (`TestIsIPv6`)
+- Add tests for ping command selection (`TestPingCommand`)
+- Add tests for IPv6 ping arguments (`TestPingArgsIPv6`)
+- Update existing tests to reflect macOS `ping6` command behavior
+
 ## [0.0.7] - 2026-01-08
 
 ### Changed
