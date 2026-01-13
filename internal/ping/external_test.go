@@ -230,3 +230,84 @@ func TestExternalPingerCommandConstruction(t *testing.T) {
 		t.Logf("Expected failure: %v", result.Error)
 	}
 }
+
+func TestIsIPv6(t *testing.T) {
+	testCases := []struct {
+		addr     string
+		expected bool
+	}{
+		{"127.0.0.1", false},
+		{"192.168.1.1", false},
+		{"8.8.8.8", false},
+		{"::1", true},
+		{"2001:db8::1", true},
+		{"fe80::1", true},
+		{"localhost", false}, // Will resolve to IPv4 or IPv6 depending on system
+		{"example.com", false}, // Will resolve to IPv4 or IPv6 depending on system
+	}
+
+	for _, tc := range testCases {
+		result := isIPv6(tc.addr)
+		// For hostnames, we can't be certain, so we just check it doesn't panic
+		if tc.addr == "localhost" || tc.addr == "example.com" {
+			// Just verify it returns a boolean value without panicking
+			_ = result
+			continue
+		}
+		if result != tc.expected {
+			t.Fatalf("isIPv6(%q) = %v, expected %v", tc.addr, result, tc.expected)
+		}
+	}
+}
+
+func TestPingCommand(t *testing.T) {
+	testCases := []struct {
+		addr     string
+		expected string
+	}{
+		{"127.0.0.1", "ping"},
+		{"192.168.1.1", "ping"},
+		{"8.8.8.8", "ping"},
+		{"::1", "ping6"},
+		{"2001:db8::1", "ping6"},
+		{"fe80::1", "ping6"},
+	}
+
+	if runtime.GOOS != "darwin" {
+		// On non-macOS systems, pingCommand should always return "ping"
+		for _, tc := range testCases {
+			result := pingCommand(tc.addr)
+			if result != "ping" {
+				t.Fatalf("pingCommand(%q) = %q, expected %q on non-macOS", tc.addr, result, "ping")
+			}
+		}
+		return
+	}
+
+	// On macOS, IPv6 addresses should use ping6
+	for _, tc := range testCases {
+		result := pingCommand(tc.addr)
+		if result != tc.expected {
+			t.Fatalf("pingCommand(%q) = %q, expected %q", tc.addr, result, tc.expected)
+		}
+	}
+}
+
+func TestPingArgsIPv6(t *testing.T) {
+	timeout := 1500 * time.Millisecond
+	args := pingArgs("::1", timeout)
+
+	var expected []string
+	switch runtime.GOOS {
+	case "darwin":
+		// macOS ping6 doesn't support -W option, timeout is handled by context
+		expected = []string{"-n", "-c", "1", "::1"}
+	default:
+		timeoutSec := maxInt(1, int(timeout.Seconds()+0.5))
+		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutSec), "::1"}
+	}
+
+	if !reflect.DeepEqual(args, expected) {
+		t.Fatalf("expected args %v, got %v", expected, args)
+	}
+}
