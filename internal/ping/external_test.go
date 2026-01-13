@@ -242,7 +242,7 @@ func TestIsIPv6(t *testing.T) {
 		{"::1", true},
 		{"2001:db8::1", true},
 		{"fe80::1", true},
-		{"localhost", false}, // Will resolve to IPv4 or IPv6 depending on system
+		{"localhost", false},   // Will resolve to IPv4 or IPv6 depending on system
 		{"example.com", false}, // Will resolve to IPv4 or IPv6 depending on system
 	}
 

@@ -29,7 +29,7 @@ func (p *ExternalPinger) Ping(ctx context.Context, addr string, timeout time.Dur
 	cmd := exec.CommandContext(ctx, cmdName, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		// contextがtimeoutでキャンセルされた場合をチェック
+		// Check if context was cancelled due to timeout
 		if ctx.Err() == context.DeadlineExceeded {
 			return Result{Success: false, Error: fmt.Errorf("ping timeout: %w", ctx.Err())}
 		}
@@ -55,20 +55,20 @@ func pingCommand(addr string) string {
 // isIPv6 checks if the given address is an IPv6 address.
 func isIPv6(addr string) bool {
 	ip := net.ParseIP(addr)
-	if ip == nil {
-		// If parsing fails, try to resolve it
-		ipAddr, err := net.ResolveIPAddr("ip", addr)
-		if err != nil {
-			return false
-		}
-		ip = ipAddr.IP
+	if ip != nil {
+		return ip.To4() == nil
 	}
-	return ip != nil && ip.To4() == nil
+	// If parsing fails, try to resolve it
+	ipAddr, err := net.ResolveIPAddr("ip", addr)
+	if err != nil {
+		return false
+	}
+	return ipAddr.IP != nil && ipAddr.IP.To4() == nil
 }
 
 func pingArgs(addr string, timeout time.Duration) []string {
 	isIPv6Addr := isIPv6(addr)
-	
+
 	switch runtime.GOOS {
 	case "darwin":
 		if isIPv6Addr {
