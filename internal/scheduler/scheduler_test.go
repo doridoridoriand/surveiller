@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/state"
 )
@@ -20,11 +21,12 @@ func TestSchedulerMaxConcurrency(t *testing.T) {
 		{Name: "b", Address: "192.0.2.2"},
 	}
 
+	logger := log.NewLogger(log.LevelInfo)
 	s := NewScheduler(config.GlobalOptions{
 		Interval:       1 * time.Millisecond,
 		Timeout:        5 * time.Millisecond,
 		MaxConcurrency: 1,
-	}, targets, pinger, store)
+	}, targets, pinger, store, logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
@@ -49,11 +51,12 @@ func TestSchedulerUpdateConfigStartsNewTarget(t *testing.T) {
 	store := state.NewStore(nil, 2*time.Millisecond)
 
 	initial := []config.TargetConfig{{Name: "a", Address: "192.0.2.1"}}
+	logger := log.NewLogger(log.LevelInfo)
 	s := NewScheduler(config.GlobalOptions{
 		Interval:       1 * time.Millisecond,
 		Timeout:        2 * time.Millisecond,
 		MaxConcurrency: 2,
-	}, initial, recorder, store)
+	}, initial, recorder, store, logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
 	defer cancel()

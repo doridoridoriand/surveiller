@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/state"
 )
@@ -25,6 +26,7 @@ type Impl struct {
 	targets    map[string]config.TargetConfig
 	pinger     ping.Pinger
 	state      state.Store
+	logger     *log.Logger
 	semaphore  chan struct{}
 	targetJobs map[string]context.CancelFunc
 	wg         sync.WaitGroup
@@ -33,12 +35,13 @@ type Impl struct {
 }
 
 // NewScheduler constructs a scheduler instance.
-func NewScheduler(global config.GlobalOptions, targets []config.TargetConfig, pinger ping.Pinger, store state.Store) *Impl {
+func NewScheduler(global config.GlobalOptions, targets []config.TargetConfig, pinger ping.Pinger, store state.Store, logger *log.Logger) *Impl {
 	s := &Impl{
 		cfg:        global,
 		targets:    make(map[string]config.TargetConfig),
 		pinger:     pinger,
 		state:      store,
+		logger:     logger,
 		semaphore:  make(chan struct{}, maxConcurrency(global.MaxConcurrency)),
 		targetJobs: make(map[string]context.CancelFunc),
 	}
@@ -181,6 +184,9 @@ func (s *Impl) runTargetLoop(ctx context.Context, target config.TargetConfig) {
 		result := s.pingOnce(ctx, target.Address, timeout)
 		s.release(sem)
 		s.state.UpdateResult(target.Name, result)
+		if s.logger != nil {
+			s.logger.LogPingResult(target.Name, result.Success, result.RTT, result.Error)
+		}
 	}
 }
 
