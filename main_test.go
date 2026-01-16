@@ -681,7 +681,7 @@ func generateAddress(index int) string {
 	return "192.0.2." + string(rune('0'+(index%250)))
 }
 
-// **Feature: surveiller, Property 17: 構造化ログ出力**
+// **Feature: surveiller, Property 17: Structured Logging Output**
 // **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 func TestPropertyStructuredLogging(t *testing.T) {
 	params := gopter.DefaultTestParameters()

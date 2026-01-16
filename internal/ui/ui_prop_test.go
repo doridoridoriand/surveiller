@@ -11,7 +11,7 @@ import (
 	"github.com/leanovate/gopter/prop"
 )
 
-// **Feature: surveiller, Property 7: TUI グループ表示**
+// **Feature: surveiller, Property 7: TUI Group Display**
 // **Validates: Requirements 3.2**
 func TestPropertyTUIGroupDisplay(t *testing.T) {
 	params := gopter.DefaultTestParameters()
@@ -199,7 +199,7 @@ func TestPropertyTUIGroupDisplay(t *testing.T) {
 	props.TestingRun(t, gopter.ConsoleReporter(false))
 }
 
-// **Feature: surveiller, Property 8: TUI RTT バーグラフ表示**
+// **Feature: surveiller, Property 8: TUI RTT Bar Graph Display**
 // **Validates: Requirements 3.3**
 func TestPropertyTUIRTTBarGraphDisplay(t *testing.T) {
 	params := gopter.DefaultTestParameters()
@@ -365,7 +365,7 @@ func TestPropertyTUIRTTBarGraphDisplay(t *testing.T) {
 	props.TestingRun(t, gopter.ConsoleReporter(false))
 }
 
-// **Feature: surveiller, Property 9: TUI 状態更新の即時反映**
+// **Feature: surveiller, Property 9: TUI State Update Immediate Reflection**
 // **Validates: Requirements 3.4**
 func TestPropertyTUIStateUpdateImmediateReflection(t *testing.T) {
 	params := gopter.DefaultTestParameters()
