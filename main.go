@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -32,6 +33,7 @@ func main() {
 		flagMetricsMode    cli.OptionalMetricsMode
 		flagMetricsListen  cli.OptionalString
 		flagNoUI           cli.OptionalBool
+		flagLogFile        cli.OptionalString
 		flagVersion        bool
 		flagVersionShort   bool
 	)
@@ -44,6 +46,7 @@ func main() {
 	flag.Var(&flagMetricsMode, "metrics-mode", "metrics mode: per-target|aggregated|both")
 	flag.Var(&flagMetricsListen, "metrics-listen", "metrics listen address (e.g. :9100)")
 	flag.Var(&flagNoUI, "no-ui", "disable TUI (log only)")
+	flag.Var(&flagLogFile, "log-file", "log file path (default: logging disabled)")
 	flag.BoolVar(&flagVersion, "version", false, "show version")
 	flag.BoolVar(&flagVersionShort, "v", false, "show version")
 
@@ -61,11 +64,34 @@ func main() {
 	}
 
 	args := flag.Args()
-	if len(args) < 1 {
+	// Handle flags that appear after the config file argument
+	// Go's flag package stops parsing at the first non-flag argument,
+	// so we need to manually process remaining flags
+	var configPath string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--log-file" || arg == "-log-file" {
+			if i+1 < len(args) {
+				flagLogFile.Set(args[i+1])
+				i++ // Skip the next argument as it's the flag value
+				continue
+			}
+		} else if strings.HasPrefix(arg, "--log-file=") {
+			flagLogFile.Set(strings.TrimPrefix(arg, "--log-file="))
+		} else if strings.HasPrefix(arg, "-log-file=") {
+			flagLogFile.Set(strings.TrimPrefix(arg, "-log-file="))
+		} else if !strings.HasPrefix(arg, "-") {
+			// This is a non-flag argument (config file)
+			if configPath == "" {
+				configPath = arg
+			}
+		}
+	}
+
+	if configPath == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
-	configPath := args[0]
 
 	// Initialize logger (default to INFO level, can be overridden by environment variable)
 	logLevel := log.LevelInfo
@@ -73,6 +99,16 @@ func main() {
 		logLevel = log.ParseLevel(levelStr)
 	}
 	logger := log.NewLogger(logLevel)
+
+	// Set log output to file if --log-file flag is specified
+	if logFilePath, ok := flagLogFile.Value(); ok && logFilePath != "" {
+		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to open log file %s: %v\n", logFilePath, err)
+			os.Exit(1)
+		}
+		logger.SetOutput(logFile)
+	}
 
 	overrides := buildOverrides(flagInterval, flagTimeout, flagMaxConcurrency, flagMetricsMode, flagMetricsListen, flagNoUI)
 

@@ -116,7 +116,9 @@ surveiller では、上記のうち **コアとなる監視ロジックと設定
    - SIGHUP 受信時に設定ファイルを再読み込み
    - 可能なら既存ターゲットの履歴を維持
 5. **ログ**
-   - 標準出力 / ファイルに構造化ログを出力（JSON も検討）
+   - デフォルトではログ出力は無効（TUI表示を妨げないため）
+   - `--log-file`フラグ指定時のみ、ファイルに構造化ログ（JSON形式）を出力
+   - 標準出力/標準エラー出力にはログを出力しない
 
 ### 5.2 非機能要件
 
@@ -698,9 +700,18 @@ Options:
       --metrics-mode string   Metrics mode: per-target|aggregated|both
       --metrics-listen string Prometheus metrics listen addr (e.g. ":9100")
       --no-ui                 Run without TUI (log only)
+      --log-file string       Log file path (default: logging disabled)
   -v, --version               Show version
   -h, --help                  Show help
 ```
+
+### ログ出力について
+
+- **デフォルト**: ログ出力は無効（TUI表示を妨げないため）
+- **`--log-file`フラグ指定時**: 構造化ログ（JSON形式）を指定ファイルに出力
+- **標準出力/標準エラー出力**: ログは出力されない（TUI表示を保護）
+- **ログレベル**: 環境変数`SURVEILLER_LOG_LEVEL`で設定可能（DEBUG, INFO, WARN, ERROR）
+- **ログ形式**: JSON形式の構造化ログ（タイムスタンプ、レベル、メッセージ、フィールドを含む）
 
 ---
 

@@ -87,6 +87,7 @@ CLI options override config file values:
   -metrics-mode per-target \
   -metrics-listen :9100 \
   -no-ui \
+  --log-file /var/log/surveiller.log \
   path/to/surveiller.conf
 ```
 
@@ -98,6 +99,9 @@ CLI options override config file values:
 - `--metrics-mode string`: Metrics mode (per-target|aggregated|both)
 - `--metrics-listen string`: Prometheus metrics listen address
 - `--no-ui`: Run without TUI (log only mode)
+- `--log-file string`: Log file path (default: logging disabled)
+  - When specified, structured logs (JSON format) are written to the file
+  - Logs are not output to stdout/stderr to avoid interfering with TUI
 - `-v, --version`: Show version
 
 ## Configuration Reference
