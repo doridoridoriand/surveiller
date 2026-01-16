@@ -1,15 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/cli"
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/state"
 	"github.com/leanovate/gopter"
@@ -675,4 +679,252 @@ func generateTargetName(index int) string {
 
 func generateAddress(index int) string {
 	return "192.0.2." + string(rune('0'+(index%250)))
+}
+
+// **Feature: surveiller, Property 17: 構造化ログ出力**
+// **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
+func TestPropertyStructuredLogging(t *testing.T) {
+	params := gopter.DefaultTestParameters()
+	params.MinSuccessfulTests = 100
+	props := gopter.NewProperties(params)
+
+	props.Property("ping result logs contain target name, result, and RTT", prop.ForAll(
+		func(success bool, rttMs int) bool {
+			if rttMs < 0 || rttMs > 10000 {
+				return true
+			}
+
+			var buf bytes.Buffer
+			logger := log.NewLogger(log.LevelInfo)
+			logger.SetOutput(&buf)
+
+			rtt := time.Duration(rttMs) * time.Millisecond
+			var err error
+			if !success {
+				err = fmt.Errorf("ping failed")
+			}
+
+			logger.LogPingResult("test-target", success, rtt, err)
+
+			output := buf.String()
+			if output == "" {
+				return false
+			}
+
+			// Parse JSON
+			var entry log.LogEntry
+			if err := json.Unmarshal([]byte(output), &entry); err != nil {
+				return false
+			}
+
+			// Verify structure
+			if entry.Timestamp == "" || entry.Level == "" || entry.Message == "" {
+				return false
+			}
+
+			// Verify fields
+			if entry.Fields == nil {
+				return false
+			}
+			if entry.Fields["target"] != "test-target" {
+				return false
+			}
+			if entry.Fields["success"] != success {
+				return false
+			}
+			if rttMs > 0 {
+				if rttMsVal, ok := entry.Fields["rtt_ms"].(float64); !ok || int(rttMsVal) != rttMs {
+					return false
+				}
+			}
+			if !success && err != nil {
+				if entry.Fields["error"] == nil {
+					return false
+				}
+			}
+
+			return true
+		},
+		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
+			value := genParams.Rng.Intn(2) == 1
+			return gopter.NewGenResult(value, gopter.NoShrinker)
+		}),
+		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
+			value := genParams.Rng.Intn(10000)
+			return gopter.NewGenResult(value, gopter.NoShrinker)
+		}),
+	))
+
+	props.Property("config load logs contain path and result", prop.ForAll(
+		func(success bool) bool {
+			var buf bytes.Buffer
+			logger := log.NewLogger(log.LevelInfo)
+			logger.SetOutput(&buf)
+
+			configPath := "/path/to/config.conf"
+			var err error
+			if !success {
+				err = fmt.Errorf("config load failed")
+			}
+
+			logger.LogConfigLoad(success, configPath, err)
+
+			output := buf.String()
+			if output == "" {
+				return false
+			}
+
+			// Parse JSON
+			var entry log.LogEntry
+			if err := json.Unmarshal([]byte(output), &entry); err != nil {
+				return false
+			}
+
+			// Verify structure
+			if entry.Timestamp == "" || entry.Level == "" || entry.Message == "" {
+				return false
+			}
+
+			// Verify fields
+			if entry.Fields == nil {
+				return false
+			}
+			if entry.Fields["path"] != configPath {
+				return false
+			}
+			if !success && err != nil {
+				if entry.Fields["error"] == nil {
+					return false
+				}
+			}
+
+			// Verify log level
+			if success {
+				if entry.Level != "INFO" {
+					return false
+				}
+			} else {
+				if entry.Level != "ERROR" {
+					return false
+				}
+			}
+
+			return true
+		},
+		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
+			value := genParams.Rng.Intn(2) == 1
+			return gopter.NewGenResult(value, gopter.NoShrinker)
+		}),
+	))
+
+	props.Property("error logs contain component and error details", prop.ForAll(
+		func(component string) bool {
+			if component == "" {
+				component = "test-component"
+			}
+
+			var buf bytes.Buffer
+			logger := log.NewLogger(log.LevelInfo)
+			logger.SetOutput(&buf)
+
+			err := fmt.Errorf("test error message")
+			fields := map[string]interface{}{
+				"additional": "field",
+			}
+
+			logger.LogError(component, err, fields)
+
+			output := buf.String()
+			if output == "" {
+				return false
+			}
+
+			// Parse JSON
+			var entry log.LogEntry
+			if err := json.Unmarshal([]byte(output), &entry); err != nil {
+				return false
+			}
+
+			// Verify structure
+			if entry.Timestamp == "" || entry.Level != "ERROR" || entry.Message == "" {
+				return false
+			}
+
+			// Verify fields
+			if entry.Fields == nil {
+				return false
+			}
+			if entry.Fields["component"] != component {
+				return false
+			}
+			if entry.Fields["error"] == nil {
+				return false
+			}
+			if entry.Fields["additional"] != "field" {
+				return false
+			}
+
+			return true
+		},
+		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
+			components := []string{"scheduler", "metrics", "ui", "pinger", "config"}
+			idx := genParams.Rng.Intn(len(components))
+			return gopter.NewGenResult(components[idx], gopter.NoShrinker)
+		}),
+	))
+
+	props.Property("log level filtering works correctly", prop.ForAll(
+		func(levelInt int) bool {
+			if levelInt < 0 || levelInt > 3 {
+				return true
+			}
+
+			levels := []log.Level{log.LevelDebug, log.LevelInfo, log.LevelWarn, log.LevelError}
+			loggerLevel := levels[levelInt]
+
+			var buf bytes.Buffer
+			logger := log.NewLogger(loggerLevel)
+			logger.SetOutput(&buf)
+
+			// Log at different levels
+			logger.Debug("debug message", nil)
+			logger.Info("info message", nil)
+			logger.Warn("warn message", nil)
+			logger.Error("error message", nil)
+
+			output := buf.String()
+			lines := strings.Split(strings.TrimSpace(output), "\n")
+
+			// Count non-empty lines
+			actualCount := 0
+			for _, line := range lines {
+				if strings.TrimSpace(line) != "" {
+					actualCount++
+				}
+			}
+
+			// Expected count: messages at loggerLevel or higher
+			expectedCount := 0
+			if log.LevelDebug >= loggerLevel {
+				expectedCount++
+			}
+			if log.LevelInfo >= loggerLevel {
+				expectedCount++
+			}
+			if log.LevelWarn >= loggerLevel {
+				expectedCount++
+			}
+			if log.LevelError >= loggerLevel {
+				expectedCount++
+			}
+
+			return actualCount == expectedCount
+		},
+		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
+			value := genParams.Rng.Intn(4)
+			return gopter.NewGenResult(value, gopter.NoShrinker)
+		}),
+	))
+
+	props.TestingRun(t, gopter.ConsoleReporter(false))
 }

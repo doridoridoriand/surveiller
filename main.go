@@ -14,6 +14,7 @@ import (
 
 	"github.com/doridoridoriand/surveiller/internal/cli"
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/metrics"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/scheduler"
@@ -66,24 +67,32 @@ func main() {
 	}
 	configPath := args[0]
 
+	// Initialize logger (default to INFO level, can be overridden by environment variable)
+	logLevel := log.LevelInfo
+	if levelStr := os.Getenv("SURVEILLER_LOG_LEVEL"); levelStr != "" {
+		logLevel = log.ParseLevel(levelStr)
+	}
+	logger := log.NewLogger(logLevel)
+
 	overrides := buildOverrides(flagInterval, flagTimeout, flagMaxConcurrency, flagMetricsMode, flagMetricsListen, flagNoUI)
 
 	parser := config.SurveillerParser{}
 	cfg, err := parser.LoadConfig(configPath, overrides)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		logger.LogConfigLoad(false, configPath, err)
 		os.Exit(1)
 	}
+	logger.LogConfigLoad(true, configPath, nil)
 
 	icmpPinger, err := ping.NewICMPPinger()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize pinger: %v\n", err)
+		logger.LogError("pinger", err, nil)
 		os.Exit(1)
 	}
 	pinger := ping.NewFallbackPinger(icmpPinger, ping.NewExternalPinger())
 
 	store := state.NewStore(cfg.Targets, cfg.Global.Timeout)
-	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, pinger, store)
+	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, pinger, store, logger)
 
 	ctx, cancel := signalContext()
 	defer cancel()
@@ -92,8 +101,10 @@ func main() {
 	reload := func() error {
 		newCfg, err := parser.LoadConfig(configPath, overrides)
 		if err != nil {
+			logger.LogConfigLoad(false, configPath, err)
 			return err
 		}
+		logger.LogConfigLoad(true, configPath, nil)
 		sched.UpdateConfig(newCfg.Global, newCfg.Targets)
 		store.UpdateTargets(newCfg.Targets)
 		store.UpdateTimeout(newCfg.Global.Timeout)
@@ -110,7 +121,7 @@ func main() {
 				return
 			case <-reloadCh:
 				if err := reload(); err != nil {
-					fmt.Fprintf(os.Stderr, "failed to reload config: %v\n", err)
+					// Error already logged in reload function
 				}
 			}
 		}
@@ -136,7 +147,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			if err := metrics.Serve(ctx, cfg.Global.MetricsListen, cfg.Global.MetricsMode, store); err != nil && !errors.Is(err, context.Canceled) {
-				fmt.Fprintf(os.Stderr, "metrics error: %v\n", err)
+				logger.LogError("metrics", err, nil)
 				cancel()
 			}
 		}()
@@ -145,7 +156,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := sched.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
-			fmt.Fprintf(os.Stderr, "scheduler error: %v\n", err)
+			logger.LogError("scheduler", err, nil)
 			cancel()
 		}
 	}()
@@ -160,7 +171,7 @@ func main() {
 	} else {
 		ui := ui.New(cfg.Global, store, reloadCh)
 		if err := ui.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
-			fmt.Fprintf(os.Stderr, "ui error: %v\n", err)
+			logger.LogError("ui", err, nil)
 			cancel()
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/state"
 	"github.com/leanovate/gopter"
@@ -60,11 +61,12 @@ func TestPropertySchedulerConcurrencyLimit(t *testing.T) {
 					Address: fmt.Sprintf("192.0.2.%d", i+1),
 				}
 			}
+			logger := log.NewLogger(log.LevelInfo)
 			s := NewScheduler(config.GlobalOptions{
 				Interval:       1 * time.Millisecond,
 				Timeout:        5 * time.Millisecond,
 				MaxConcurrency: maxConc,
-			}, targets, pinger, store)
+			}, targets, pinger, store, logger)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
 			defer cancel()
@@ -112,11 +114,12 @@ func TestPropertySchedulerTargetsStart(t *testing.T) {
 				targets[i] = config.TargetConfig{Name: addr, Address: addr}
 			}
 
+			logger := log.NewLogger(log.LevelInfo)
 			s := NewScheduler(config.GlobalOptions{
 				Interval:       1 * time.Millisecond,
 				Timeout:        2 * time.Millisecond,
 				MaxConcurrency: targetCount,
-			}, targets, pinger, store)
+			}, targets, pinger, store, logger)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
 			defer cancel()
@@ -155,11 +158,12 @@ func TestPropertySchedulerIntervalRespected(t *testing.T) {
 			store := state.NewStore(nil, 2*time.Millisecond)
 			target := config.TargetConfig{Name: "a", Address: "192.0.2.1"}
 
+			logger := log.NewLogger(log.LevelInfo)
 			s := NewScheduler(config.GlobalOptions{
 				Interval:       interval,
 				Timeout:        2 * time.Millisecond,
 				MaxConcurrency: 1,
-			}, []config.TargetConfig{target}, pinger, store)
+			}, []config.TargetConfig{target}, pinger, store, logger)
 
 			ctx, cancel := context.WithTimeout(context.Background(), interval*4)
 			defer cancel()
@@ -203,11 +207,12 @@ func TestPropertySchedulerStopsOnCancel(t *testing.T) {
 			store := state.NewStore(nil, 2*time.Millisecond)
 			target := config.TargetConfig{Name: "a", Address: "192.0.2.1"}
 
+			logger := log.NewLogger(log.LevelInfo)
 			s := NewScheduler(config.GlobalOptions{
 				Interval:       interval,
 				Timeout:        1 * time.Millisecond,
 				MaxConcurrency: 1,
-			}, []config.TargetConfig{target}, pinger, store)
+			}, []config.TargetConfig{target}, pinger, store, logger)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			go func() { _ = s.Run(ctx) }()

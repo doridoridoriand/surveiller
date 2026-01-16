@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/config"
+	"github.com/doridoridoriand/surveiller/internal/log"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 	"github.com/doridoridoriand/surveiller/internal/scheduler"
 	"github.com/doridoridoriand/surveiller/internal/state"
@@ -175,7 +176,8 @@ target2 192.0.2.2
 
 	// 4. スケジューラー起動
 	store := state.NewStore(cfg.Targets, cfg.Global.Timeout)
-	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, mockPinger, store)
+	logger := log.NewLogger(log.LevelInfo)
+	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, mockPinger, store, logger)
 
 	// 5. 監視開始と検証
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -350,7 +352,8 @@ target2 192.0.2.2
 	mockPinger.SetDefaultResult(true, 10*time.Millisecond)
 
 	store := state.NewStore(cfg.Targets, cfg.Global.Timeout)
-	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, mockPinger, store)
+	logger := log.NewLogger(log.LevelInfo)
+	sched := scheduler.NewScheduler(cfg.Global, cfg.Targets, mockPinger, store, logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
