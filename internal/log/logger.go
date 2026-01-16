@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"time"
 )
 
@@ -40,10 +39,12 @@ type LogEntry struct {
 }
 
 // NewLogger creates a new logger with the specified level
+// By default, logging is disabled (outputs to io.Discard).
+// Use SetOutput to enable logging to a file or other writer.
 func NewLogger(level Level) *Logger {
 	return &Logger{
 		level:  level,
-		output: os.Stderr,
+		output: io.Discard,
 	}
 }
 
@@ -60,6 +61,9 @@ func (l *Logger) SetLevel(level Level) {
 // log writes a structured log entry
 func (l *Logger) log(level Level, message string, fields map[string]interface{}) {
 	if level < l.level {
+		return
+	}
+	if l.output == nil || l.output == io.Discard {
 		return
 	}
 

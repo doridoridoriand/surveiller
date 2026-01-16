@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `--log-file` flag to enable file-based logging
+  - By default, logging is disabled to prevent TUI disruption
+  - When `--log-file` is specified, structured logs (JSON format) are written to the specified file
+  - Logs are not output to stdout/stderr to avoid interfering with TUI display
+  - Supports flags after config file argument (e.g., `surveiller config.conf --log-file log.json`)
+
+### Changed
+- Default logging output changed from stderr to disabled (io.Discard)
+  - Prevents log output from disrupting TUI display
+  - Logging can be enabled via `--log-file` flag
+
 ## [0.0.8] - 2026-01-13
 
 ### Fixed
