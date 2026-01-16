@@ -23,19 +23,19 @@ import (
 // 6.1 アプリケーション初期化の単体テスト
 func TestBuildOverrides(t *testing.T) {
 	tests := []struct {
-		name            string
-		setupInterval   func() cli.OptionalDuration
-		setupTimeout    func() cli.OptionalDuration
-		setupMaxConc    func() cli.OptionalInt
-		setupMetrics    func() cli.OptionalMetricsMode
-		setupListen     func() cli.OptionalString
-		setupNoUI       func() cli.OptionalBool
-		checkInterval   bool
-		checkTimeout    bool
-		checkMaxConc    bool
-		checkMetrics    bool
-		checkListen     bool
-		checkUIDisable  bool
+		name             string
+		setupInterval    func() cli.OptionalDuration
+		setupTimeout     func() cli.OptionalDuration
+		setupMaxConc     func() cli.OptionalInt
+		setupMetrics     func() cli.OptionalMetricsMode
+		setupListen      func() cli.OptionalString
+		setupNoUI        func() cli.OptionalBool
+		checkInterval    bool
+		checkTimeout     bool
+		checkMaxConc     bool
+		checkMetrics     bool
+		checkListen      bool
+		checkUIDisable   bool
 		expectedInterval time.Duration
 		expectedTimeout  time.Duration
 		expectedMaxConc  int
@@ -75,12 +75,12 @@ func TestBuildOverrides(t *testing.T) {
 				b.Set("true")
 				return b
 			},
-			checkInterval:  true,
-			checkTimeout:   true,
-			checkMaxConc:   true,
-			checkMetrics:   true,
-			checkListen:    true,
-			checkUIDisable: true,
+			checkInterval:    true,
+			checkTimeout:     true,
+			checkMaxConc:     true,
+			checkMetrics:     true,
+			checkListen:      true,
+			checkUIDisable:   true,
 			expectedInterval: 2 * time.Second,
 			expectedTimeout:  1 * time.Second,
 			expectedMaxConc:  50,
@@ -100,17 +100,17 @@ func TestBuildOverrides(t *testing.T) {
 				d.Set("2s")
 				return d
 			},
-			setupMaxConc: func() cli.OptionalInt { return cli.OptionalInt{} },
-			setupMetrics: func() cli.OptionalMetricsMode { return cli.OptionalMetricsMode{} },
-			setupListen:  func() cli.OptionalString { return cli.OptionalString{} },
-			setupNoUI:    func() cli.OptionalBool { return cli.OptionalBool{} },
-			checkInterval: true,
-			checkTimeout:  true,
+			setupMaxConc:     func() cli.OptionalInt { return cli.OptionalInt{} },
+			setupMetrics:     func() cli.OptionalMetricsMode { return cli.OptionalMetricsMode{} },
+			setupListen:      func() cli.OptionalString { return cli.OptionalString{} },
+			setupNoUI:        func() cli.OptionalBool { return cli.OptionalBool{} },
+			checkInterval:    true,
+			checkTimeout:     true,
 			expectedInterval: 3 * time.Second,
 			expectedTimeout:  2 * time.Second,
 		},
 		{
-			name: "no overrides",
+			name:          "no overrides",
 			setupInterval: func() cli.OptionalDuration { return cli.OptionalDuration{} },
 			setupTimeout:  func() cli.OptionalDuration { return cli.OptionalDuration{} },
 			setupMaxConc:  func() cli.OptionalInt { return cli.OptionalInt{} },
