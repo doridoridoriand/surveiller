@@ -7,17 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-01-18
+
 ### Added
 - Add `--log-file` flag to enable file-based logging
   - By default, logging is disabled to prevent TUI disruption
   - When `--log-file` is specified, structured logs (JSON format) are written to the specified file
   - Logs are not output to stdout/stderr to avoid interfering with TUI display
   - Supports flags after config file argument (e.g., `surveiller config.conf --log-file log.json`)
+- Add structured logging package (`internal/log`)
+  - JSON format log output implementation
+  - Log level control (DEBUG, INFO, WARN, ERROR)
+  - Log methods for ping results, configuration loading, and errors
+  - Configurable log level via `SURVEILLER_LOG_LEVEL` environment variable
+- Add comprehensive end-to-end integration tests
+  - Configuration file loading to monitoring start integration test
+  - TUI and backend integration test
+  - Configuration reload integration test
+  - Mock pinger helper for network communication mocking
+- Add comprehensive unit tests for UI package
+- Add property-based tests for state package
 
 ### Changed
 - Default logging output changed from stderr to disabled (io.Discard)
   - Prevents log output from disrupting TUI display
   - Logging can be enabled via `--log-file` flag
+- Inject logger into scheduler for ping result logging
+
+### Testing
+- Add property-based test for structured logging (Property 17)
+  - Verify ping result logging, configuration loading logs, error logs, and log level filtering
+- Add comprehensive unit tests for UI package functionality
+- Add property-based tests for state package
+- Add end-to-end integration tests covering configuration loading, TUI integration, and reload functionality
+- Translate Japanese comments to English in test files
+
+### Documentation
+- Update README.md to document `--log-file` flag usage
+- Update design documentation to reflect structured logging implementation
+- Update test coverage improvement task progress
+- Organize specification files and update implemented tasks
+
+### Style
+- Fix formatting in main_test.go
 
 ## [0.0.8] - 2026-01-13
 
