@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -186,5 +188,111 @@ func TestParseTargetLineOptions(t *testing.T) {
 	}
 	if target.Options["relay"] != "jump1" || target.Options["user"] != "foo" {
 		t.Fatalf("expected options parsed, got %+v", target.Options)
+	}
+}
+
+// TestLoadConfigErrorIncludesLineNumber verifies that parse errors include file path and line number (task 13.1).
+func TestLoadConfigErrorIncludesLineNumber(t *testing.T) {
+	// Error on line 2: invalid directive on line 1, then invalid target on line 2
+	configText := "# surveiller: interval=1s\ninvalidline\n"
+	path := writeTempConfig(t, configText)
+	parser := SurveillerParser{}
+
+	_, err := parser.LoadConfig(path, CLIOverrides{})
+	if err == nil {
+		t.Fatal("expected error for invalid target line")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, path) {
+		t.Errorf("error message should contain path %q, got %q", path, msg)
+	}
+	if !strings.Contains(msg, ":2:") {
+		t.Errorf("error message should contain line number :2:, got %q", msg)
+	}
+	// ConfigError unwraps to the underlying error
+	var cfgErr *ConfigError
+	if !errors.As(err, &cfgErr) {
+		t.Errorf("expected *ConfigError, got %T", err)
+	} else if cfgErr.Line != 2 {
+		t.Errorf("expected Line 2, got %d", cfgErr.Line)
+	}
+}
+
+// TestLoadConfigRejectsInvalidDirective_LineNumber verifies directive error includes line number.
+func TestLoadConfigRejectsInvalidDirective_LineNumber(t *testing.T) {
+	configText := "# surveiller: interval=notaduration\n"
+	path := writeTempConfig(t, configText)
+	parser := SurveillerParser{}
+
+	_, err := parser.LoadConfig(path, CLIOverrides{})
+	if err == nil {
+		t.Fatal("expected error for invalid directive")
+	}
+	if !strings.Contains(err.Error(), ":1:") {
+		t.Errorf("error message should contain :1:, got %q", err.Error())
+	}
+}
+
+// TestLoadConfigValidatesGlobalOptions verifies semantic validation for global options (task 13.2).
+func TestLoadConfigValidatesGlobalOptions(t *testing.T) {
+	t.Run("interval_zero_via_cli", func(t *testing.T) {
+		configText := "surveiller: interval=1s\nhost 8.8.8.8\n"
+		path := writeTempConfig(t, configText)
+		zero := time.Duration(0)
+		overrides := CLIOverrides{Interval: &zero}
+
+		_, err := SurveillerParser{}.LoadConfig(path, overrides)
+		if err == nil {
+			t.Fatal("expected error for interval 0")
+		}
+		if !strings.Contains(err.Error(), "interval must be positive") {
+			t.Errorf("expected message about interval, got %q", err.Error())
+		}
+	})
+
+	t.Run("ui_scale_zero_in_config", func(t *testing.T) {
+		configText := "surveiller: ui.scale=0\nhost 8.8.8.8\n"
+		path := writeTempConfig(t, configText)
+
+		_, err := SurveillerParser{}.LoadConfig(path, CLIOverrides{})
+		if err == nil {
+			t.Fatal("expected error for ui.scale 0")
+		}
+		if !strings.Contains(err.Error(), "ui.scale must be positive") {
+			t.Errorf("expected message about ui.scale, got %q", err.Error())
+		}
+	})
+
+	t.Run("max_concurrency_zero_via_cli", func(t *testing.T) {
+		configText := "surveiller: max_concurrency=10\nhost 8.8.8.8\n"
+		path := writeTempConfig(t, configText)
+		zero := 0
+		overrides := CLIOverrides{MaxConcurrency: &zero}
+
+		_, err := SurveillerParser{}.LoadConfig(path, overrides)
+		if err == nil {
+			t.Fatal("expected error for max_concurrency 0")
+		}
+		if !strings.Contains(err.Error(), "max_concurrency must be positive") {
+			t.Errorf("expected message about max_concurrency, got %q", err.Error())
+		}
+	})
+}
+
+// TestLoadConfigRejectsDuplicateTargetName verifies duplicate target names are rejected (task 13.3).
+func TestLoadConfigRejectsDuplicateTargetName(t *testing.T) {
+	configText := "same 8.8.8.8\nsame 1.1.1.1\n"
+	path := writeTempConfig(t, configText)
+	parser := SurveillerParser{}
+
+	_, err := parser.LoadConfig(path, CLIOverrides{})
+	if err == nil {
+		t.Fatal("expected error for duplicate target name")
+	}
+	if !strings.Contains(err.Error(), "duplicate target name") {
+		t.Errorf("expected message about duplicate name, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), ":2:") {
+		t.Errorf("error should reference line 2 (second definition), got %q", err.Error())
 	}
 }
