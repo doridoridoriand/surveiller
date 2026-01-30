@@ -116,6 +116,7 @@ func main() {
 	cfg, err := parser.LoadConfig(configPath, overrides)
 	if err != nil {
 		logger.LogConfigLoad(false, configPath, err)
+		fmt.Fprintf(os.Stderr, "config error: %v\n", err)
 		os.Exit(1)
 	}
 	logger.LogConfigLoad(true, configPath, nil)
