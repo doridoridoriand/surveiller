@@ -277,7 +277,9 @@ func TestFlagTypesStringRepresentation(t *testing.T) {
 			testFunc: func() (string, string) {
 				var d OptionalDuration
 				unset := d.String()
-				d.Set("1s")
+				if err := d.Set("1s"); err != nil {
+					return "", ""
+				}
 				set := d.String()
 				return unset, set
 			},
@@ -287,7 +289,9 @@ func TestFlagTypesStringRepresentation(t *testing.T) {
 			testFunc: func() (string, string) {
 				var i OptionalInt
 				unset := i.String()
-				i.Set("42")
+				if err := i.Set("42"); err != nil {
+					return "", ""
+				}
 				set := i.String()
 				return unset, set
 			},
@@ -297,7 +301,9 @@ func TestFlagTypesStringRepresentation(t *testing.T) {
 			testFunc: func() (string, string) {
 				var s OptionalString
 				unset := s.String()
-				s.Set("test")
+				if err := s.Set("test"); err != nil {
+					return "", ""
+				}
 				set := s.String()
 				return unset, set
 			},
@@ -307,7 +313,9 @@ func TestFlagTypesStringRepresentation(t *testing.T) {
 			testFunc: func() (string, string) {
 				var b OptionalBool
 				unset := b.String()
-				b.Set("true")
+				if err := b.Set("true"); err != nil {
+					return "", ""
+				}
 				set := b.String()
 				return unset, set
 			},
@@ -317,7 +325,9 @@ func TestFlagTypesStringRepresentation(t *testing.T) {
 			testFunc: func() (string, string) {
 				var m OptionalMetricsMode
 				unset := m.String()
-				m.Set("per-target")
+				if err := m.Set("per-target"); err != nil {
+					return "", ""
+				}
 				set := m.String()
 				return unset, set
 			},

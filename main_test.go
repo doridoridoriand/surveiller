@@ -47,32 +47,44 @@ func TestBuildOverrides(t *testing.T) {
 			name: "all overrides set",
 			setupInterval: func() cli.OptionalDuration {
 				var d cli.OptionalDuration
-				d.Set("2s")
+				if err := d.Set("2s"); err != nil {
+					panic(err)
+				}
 				return d
 			},
 			setupTimeout: func() cli.OptionalDuration {
 				var d cli.OptionalDuration
-				d.Set("1s")
+				if err := d.Set("1s"); err != nil {
+					panic(err)
+				}
 				return d
 			},
 			setupMaxConc: func() cli.OptionalInt {
 				var i cli.OptionalInt
-				i.Set("50")
+				if err := i.Set("50"); err != nil {
+					panic(err)
+				}
 				return i
 			},
 			setupMetrics: func() cli.OptionalMetricsMode {
 				var m cli.OptionalMetricsMode
-				m.Set("aggregated")
+				if err := m.Set("aggregated"); err != nil {
+					panic(err)
+				}
 				return m
 			},
 			setupListen: func() cli.OptionalString {
 				var s cli.OptionalString
-				s.Set(":9100")
+				if err := s.Set(":9100"); err != nil {
+					panic(err)
+				}
 				return s
 			},
 			setupNoUI: func() cli.OptionalBool {
 				var b cli.OptionalBool
-				b.Set("true")
+				if err := b.Set("true"); err != nil {
+					panic(err)
+				}
 				return b
 			},
 			checkInterval:    true,
@@ -92,12 +104,16 @@ func TestBuildOverrides(t *testing.T) {
 			name: "partial overrides",
 			setupInterval: func() cli.OptionalDuration {
 				var d cli.OptionalDuration
-				d.Set("3s")
+				if err := d.Set("3s"); err != nil {
+					panic(err)
+				}
 				return d
 			},
 			setupTimeout: func() cli.OptionalDuration {
 				var d cli.OptionalDuration
-				d.Set("2s")
+				if err := d.Set("2s"); err != nil {
+					panic(err)
+				}
 				return d
 			},
 			setupMaxConc:     func() cli.OptionalInt { return cli.OptionalInt{} },

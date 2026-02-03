@@ -72,14 +72,23 @@ func main() {
 		arg := args[i]
 		if arg == "--log-file" || arg == "-log-file" {
 			if i+1 < len(args) {
-				flagLogFile.Set(args[i+1])
+				if err := flagLogFile.Set(args[i+1]); err != nil {
+					fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
+					os.Exit(1)
+				}
 				i++ // Skip the next argument as it's the flag value
 				continue
 			}
 		} else if strings.HasPrefix(arg, "--log-file=") {
-			flagLogFile.Set(strings.TrimPrefix(arg, "--log-file="))
+			if err := flagLogFile.Set(strings.TrimPrefix(arg, "--log-file=")); err != nil {
+				fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "-log-file=") {
-			flagLogFile.Set(strings.TrimPrefix(arg, "-log-file="))
+			if err := flagLogFile.Set(strings.TrimPrefix(arg, "-log-file=")); err != nil {
+				fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
+				os.Exit(1)
+			}
 		} else if !strings.HasPrefix(arg, "-") {
 			// This is a non-flag argument (config file)
 			if configPath == "" {
@@ -157,9 +166,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-reloadCh:
-				if err := reload(); err != nil {
-					// Error already logged in reload function
-				}
+				_ = reload() // Error already logged in reload function
 			}
 		}
 	}()

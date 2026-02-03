@@ -308,11 +308,7 @@ func TestPropertyTUIRTTBarGraphDisplay(t *testing.T) {
 				return false
 			}
 			hashCount := strings.Count(bar, "#")
-			if hashCount != width {
-				return false
-			}
-
-			return true
+			return hashCount == width
 		},
 		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
 			value := genParams.Rng.Intn(1000) + 100
@@ -479,11 +475,7 @@ func TestPropertyTUIStateUpdateImmediateReflection(t *testing.T) {
 
 			// Verify calculated average matches
 			calculatedAvg := calculateAvgRTT(target)
-			if calculatedAvg != avgRTT {
-				return false
-			}
-
-			return true
+			return calculatedAvg == avgRTT
 		},
 		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
 			value := genParams.Rng.Intn(20) + 1
@@ -520,11 +512,7 @@ func TestPropertyTUIStateUpdateImmediateReflection(t *testing.T) {
 			// Verify calculated loss percentage
 			expectedLoss := float64(failureCount) / float64(successCount+failureCount) * 100.0
 			calculatedLoss := calculateLossPercent(target)
-			if calculatedLoss != expectedLoss {
-				return false
-			}
-
-			return true
+			return calculatedLoss == expectedLoss
 		},
 		gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
 			value := genParams.Rng.Intn(101)
