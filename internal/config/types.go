@@ -8,7 +8,7 @@ import (
 // ConfigError is an error that includes config file path and optional line number.
 type ConfigError struct {
 	Path string
-	Line int  // 1-based; 0 means unknown or global-level
+	Line int // 1-based; 0 means unknown or global-level
 	Err  error
 }
 
