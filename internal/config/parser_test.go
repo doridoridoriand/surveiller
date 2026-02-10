@@ -250,6 +250,21 @@ func TestLoadConfigValidatesGlobalOptions(t *testing.T) {
 		}
 	})
 
+	t.Run("timeout_zero_via_cli", func(t *testing.T) {
+		configText := "surveiller: timeout=1s\nhost 8.8.8.8\n"
+		path := writeTempConfig(t, configText)
+		zero := time.Duration(0)
+		overrides := CLIOverrides{Timeout: &zero}
+
+		_, err := SurveillerParser{}.LoadConfig(path, overrides)
+		if err == nil {
+			t.Fatal("expected error for timeout 0")
+		}
+		if !strings.Contains(err.Error(), "timeout must be positive") {
+			t.Errorf("expected message about timeout, got %q", err.Error())
+		}
+	})
+
 	t.Run("ui_scale_zero_in_config", func(t *testing.T) {
 		configText := "surveiller: ui.scale=0\nhost 8.8.8.8\n"
 		path := writeTempConfig(t, configText)

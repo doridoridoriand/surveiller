@@ -270,73 +270,76 @@ func TestFlagTypesBoolFlagInterface(t *testing.T) {
 func TestFlagTypesStringRepresentation(t *testing.T) {
 	tests := []struct {
 		name     string
-		testFunc func() (unsetStr, setStr string)
+		testFunc func() (unsetStr, setStr string, err error)
 	}{
 		{
 			name: "OptionalDuration",
-			testFunc: func() (string, string) {
+			testFunc: func() (string, string, error) {
 				var d OptionalDuration
 				unset := d.String()
 				if err := d.Set("1s"); err != nil {
-					return "", ""
+					return "", "", err
 				}
 				set := d.String()
-				return unset, set
+				return unset, set, nil
 			},
 		},
 		{
 			name: "OptionalInt",
-			testFunc: func() (string, string) {
+			testFunc: func() (string, string, error) {
 				var i OptionalInt
 				unset := i.String()
 				if err := i.Set("42"); err != nil {
-					return "", ""
+					return "", "", err
 				}
 				set := i.String()
-				return unset, set
+				return unset, set, nil
 			},
 		},
 		{
 			name: "OptionalString",
-			testFunc: func() (string, string) {
+			testFunc: func() (string, string, error) {
 				var s OptionalString
 				unset := s.String()
 				if err := s.Set("test"); err != nil {
-					return "", ""
+					return "", "", err
 				}
 				set := s.String()
-				return unset, set
+				return unset, set, nil
 			},
 		},
 		{
 			name: "OptionalBool",
-			testFunc: func() (string, string) {
+			testFunc: func() (string, string, error) {
 				var b OptionalBool
 				unset := b.String()
 				if err := b.Set("true"); err != nil {
-					return "", ""
+					return "", "", err
 				}
 				set := b.String()
-				return unset, set
+				return unset, set, nil
 			},
 		},
 		{
 			name: "OptionalMetricsMode",
-			testFunc: func() (string, string) {
+			testFunc: func() (string, string, error) {
 				var m OptionalMetricsMode
 				unset := m.String()
 				if err := m.Set("per-target"); err != nil {
-					return "", ""
+					return "", "", err
 				}
 				set := m.String()
-				return unset, set
+				return unset, set, nil
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			unsetStr, setStr := tt.testFunc()
+			unsetStr, setStr, err := tt.testFunc()
+			if err != nil {
+				t.Fatalf("unexpected Set error for %s: %v", tt.name, err)
+			}
 			if unsetStr != "" {
 				t.Fatalf("expected empty string for unset %s, got %q", tt.name, unsetStr)
 			}

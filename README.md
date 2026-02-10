@@ -124,14 +124,14 @@ Set in config file using `# surveiller:` directive:
 
 When the config file is invalid, surveiller prints an error to stderr in the form `config error: <path>:<line>: <reason>` (or `config error: <path>: <reason>` for global-level errors). Common cases:
 
-| Message / keyword | Cause | Fix |
-|-------------------|--------|-----|
-| `invalid interval` / `invalid timeout` | Unparseable or non-positive duration | Use a positive duration, e.g. `1s`, `500ms`, `2s` |
-| `invalid max_concurrency` / `must be positive` | Value is zero or not an integer | Use a positive integer, e.g. `10`, `100` |
-| `invalid metrics.mode` | Unknown mode | Use one of: `per-target`, `aggregated`, `both` |
-| `invalid target line` | Line does not match `name address [key=value ...]` | Ensure each target line has at least two space-separated tokens (name and address) |
-| `duplicate target name` | Same target name appears more than once | Use unique names per target |
-| `interval must be positive` / `timeout must be positive` | Global option is 0 or negative (e.g. via CLI override) | Set a positive value in config or CLI |
+| Message / keyword                              | Cause                                     | Fix                                                                 |
+| ---                                            | ---                                       | ---                                                                 |
+| `invalid interval` / `invalid timeout`         | Unparseable or non-positive duration      | Use a positive duration, e.g. `1s`, `500ms`, `2s`                   |
+| `invalid max_concurrency` / `must be positive` | Value is zero or not an integer           | Use a positive integer, e.g. `10`, `100`                            |
+| `invalid metrics.mode`                         | Unknown mode                              | Use one of: `per-target`, `aggregated`, `both`                      |
+| `invalid target line`                          | Line does not match `name address [key=value ...]` | Ensure each target line has at least two space-separated tokens (name and address) |
+| `duplicate target name`                        | Same target name appears more than once   | Use unique names per target                                         |
+| `interval must be positive` / `timeout must be positive` | Global option is 0 or negative (e.g. via CLI override) | Set a positive value in config or CLI                               |
 
 ### Example Configuration
 

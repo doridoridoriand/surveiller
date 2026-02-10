@@ -230,10 +230,10 @@ func validateGlobal(path string, global *GlobalOptions) error {
 }
 
 func validateTargetLine(path string, lineNum int, target TargetConfig, seenNames map[string]int) error {
-	if strings.TrimSpace(target.Name) == "" {
+	if target.Name == "" {
 		return &ConfigError{Path: path, Line: lineNum, Err: fmt.Errorf("target name must be non-empty")}
 	}
-	if strings.TrimSpace(target.Address) == "" {
+	if target.Address == "" {
 		return &ConfigError{Path: path, Line: lineNum, Err: fmt.Errorf("target address must be non-empty")}
 	}
 	if prev, ok := seenNames[target.Name]; ok {

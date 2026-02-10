@@ -79,6 +79,8 @@ func main() {
 				i++ // Skip the next argument as it's the flag value
 				continue
 			}
+			fmt.Fprintln(os.Stderr, "missing value for --log-file")
+			os.Exit(1)
 		} else if strings.HasPrefix(arg, "--log-file=") {
 			if err := flagLogFile.Set(strings.TrimPrefix(arg, "--log-file=")); err != nil {
 				fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
