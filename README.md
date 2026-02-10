@@ -110,13 +110,28 @@ CLI options override config file values:
 
 Set in config file using `# surveiller:` directive:
 
-- `interval`: Ping interval (e.g., `1s`, `500ms`)
-- `timeout`: Ping timeout
-- `max_concurrency`: Maximum simultaneous pings
-- `metrics.mode`: Prometheus metrics granularity
-- `metrics.listen`: HTTP address for metrics endpoint
-- `ui.scale`: RTT bar scale in milliseconds
-- `ui.disable`: Disable terminal UI
+- `interval`: Ping interval (e.g., `1s`, `500ms`) — must be a positive duration
+- `timeout`: Ping timeout — must be a positive duration
+- `max_concurrency`: Maximum simultaneous pings — must be a positive integer
+- `metrics.mode`: Prometheus metrics granularity — one of `per-target`, `aggregated`, `both`
+- `metrics.listen`: HTTP address for metrics endpoint (e.g. `:9100` or `9100`)
+- `ui.scale`: RTT bar scale in milliseconds — must be a positive integer
+- `ui.disable`: Disable terminal UI — `true` or `false`
+
+**Validation rules:** All numeric/interval options must be **positive** (greater than zero). Target lines must have a non-empty name and address; duplicate target names in the same config are not allowed.
+
+### Configuration errors and troubleshooting
+
+When the config file is invalid, surveiller prints an error to stderr in the form `config error: <path>:<line>: <reason>` (or `config error: <path>: <reason>` for global-level errors). Common cases:
+
+| Message / keyword                              | Cause                                     | Fix                                                                 |
+| ---                                            | ---                                       | ---                                                                 |
+| `invalid interval` / `invalid timeout`         | Unparseable or non-positive duration      | Use a positive duration, e.g. `1s`, `500ms`, `2s`                   |
+| `invalid max_concurrency` / `must be positive` | Value is zero or not an integer           | Use a positive integer, e.g. `10`, `100`                            |
+| `invalid metrics.mode`                         | Unknown mode                              | Use one of: `per-target`, `aggregated`, `both`                      |
+| `invalid target line`                          | Line does not match `name address [key=value ...]` | Ensure each target line has at least two space-separated tokens (name and address) |
+| `duplicate target name`                        | Same target name appears more than once   | Use unique names per target                                         |
+| `interval must be positive` / `timeout must be positive` | Global option is 0 or negative (e.g. via CLI override) | Set a positive value in config or CLI                               |
 
 ### Example Configuration
 
@@ -254,7 +269,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 - [ ] SSH relay support (`relay=` option)
 - [ ] Enhanced Grafana dashboard templates
 - [ ] Additional monitoring protocols (HTTP, TCP)
-- [ ] Configuration validation and better error messages
+- [x] Configuration validation and better error messages
 - [ ] Improved macOS and Windows support (currently experimental)
 
 ## Platform-Specific Notes

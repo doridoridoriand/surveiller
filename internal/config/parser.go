@@ -26,6 +26,7 @@ func DefaultGlobalOptions() GlobalOptions {
 }
 
 // LoadConfig parses a surveiller.conf file with CLI overrides applied.
+// Errors include file path and line number when applicable (ConfigError).
 func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -38,8 +39,11 @@ func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Conf
 	scanner := bufio.NewScanner(file)
 	groupIndex := 0
 	currentGroup := ""
+	seenNames := make(map[string]int) // name -> line number (1-based)
 
+	lineNum := 0
 	for scanner.Scan() {
+		lineNum++
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
 			continue
@@ -49,10 +53,10 @@ func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Conf
 			if strings.HasPrefix(line, "# surveiller:") {
 				pairs, err := p.ParseSurveillerDirective(line)
 				if err != nil {
-					return nil, err
+					return nil, &ConfigError{Path: path, Line: lineNum, Err: err}
 				}
 				if err := applyDirective(&cfg.Global, pairs); err != nil {
-					return nil, err
+					return nil, &ConfigError{Path: path, Line: lineNum, Err: err}
 				}
 			}
 			continue
@@ -61,10 +65,10 @@ func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Conf
 		if strings.HasPrefix(line, "surveiller:") {
 			pairs, err := p.ParseSurveillerDirective(line)
 			if err != nil {
-				return nil, err
+				return nil, &ConfigError{Path: path, Line: lineNum, Err: err}
 			}
 			if err := applyDirective(&cfg.Global, pairs); err != nil {
-				return nil, err
+				return nil, &ConfigError{Path: path, Line: lineNum, Err: err}
 			}
 			continue
 		}
@@ -81,16 +85,23 @@ func (p SurveillerParser) LoadConfig(path string, overrides CLIOverrides) (*Conf
 
 		target, err := p.ParseTargetLine(line, currentGroup)
 		if err != nil {
+			return nil, &ConfigError{Path: path, Line: lineNum, Err: err}
+		}
+		if err := validateTargetLine(path, lineNum, target, seenNames); err != nil {
 			return nil, err
 		}
+		seenNames[target.Name] = lineNum
 		cfg.Targets = append(cfg.Targets, target)
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, &ConfigError{Path: path, Line: 0, Err: err}
 	}
 
 	applyCLIOverrides(&cfg.Global, overrides)
+	if err := validateGlobal(path, &cfg.Global); err != nil {
+		return nil, err
+	}
 	return cfg, nil
 }
 
@@ -100,7 +111,7 @@ func (p SurveillerParser) ParseSurveillerDirective(line string) (map[string]stri
 	if strings.HasPrefix(trimmed, "#") {
 		trimmed = strings.TrimSpace(strings.TrimPrefix(trimmed, "#"))
 	} else if !strings.HasPrefix(trimmed, "surveiller:") {
-		return nil, fmt.Errorf("directive line must start with '# surveiller:' or 'surveiller:': %q", line)
+		return nil, fmt.Errorf("invalid directive: line must start with \"# surveiller:\" or \"surveiller:\", got %q", line)
 	}
 	payload := strings.TrimSpace(strings.TrimPrefix(trimmed, "surveiller:"))
 	if payload == "" {
@@ -111,7 +122,7 @@ func (p SurveillerParser) ParseSurveillerDirective(line string) (map[string]stri
 	for _, token := range strings.Fields(payload) {
 		kv := strings.SplitN(token, "=", 2)
 		if len(kv) != 2 {
-			return nil, fmt.Errorf("invalid directive token: %q", token)
+			return nil, fmt.Errorf("invalid directive token %q (expected: key=value)", token)
 		}
 		pairs[kv[0]] = kv[1]
 	}
@@ -122,7 +133,7 @@ func (p SurveillerParser) ParseSurveillerDirective(line string) (map[string]stri
 func (p SurveillerParser) ParseTargetLine(line string, group string) (TargetConfig, error) {
 	fields := strings.Fields(line)
 	if len(fields) < 2 {
-		return TargetConfig{}, fmt.Errorf("invalid target line: %q", line)
+		return TargetConfig{}, fmt.Errorf("invalid target line %q (expected: name address [key=value ...])", line)
 	}
 
 	target := TargetConfig{
@@ -136,7 +147,7 @@ func (p SurveillerParser) ParseTargetLine(line string, group string) (TargetConf
 		for _, field := range fields[2:] {
 			kv := strings.SplitN(field, "=", 2)
 			if len(kv) != 2 {
-				return TargetConfig{}, fmt.Errorf("invalid target option: %q", field)
+				return TargetConfig{}, fmt.Errorf("invalid target option %q (expected: key=value)", field)
 			}
 			target.Options[kv[0]] = kv[1]
 		}
@@ -151,19 +162,19 @@ func applyDirective(global *GlobalOptions, pairs map[string]string) error {
 		case "interval":
 			d, err := time.ParseDuration(val)
 			if err != nil {
-				return fmt.Errorf("invalid interval: %w", err)
+				return fmt.Errorf("invalid interval %q: %w (expected: positive duration, e.g. 1s, 500ms)", val, err)
 			}
 			global.Interval = d
 		case "timeout":
 			d, err := time.ParseDuration(val)
 			if err != nil {
-				return fmt.Errorf("invalid timeout: %w", err)
+				return fmt.Errorf("invalid timeout %q: %w (expected: positive duration, e.g. 1s, 2s)", val, err)
 			}
 			global.Timeout = d
 		case "max_concurrency":
 			n, err := strconv.Atoi(val)
 			if err != nil {
-				return fmt.Errorf("invalid max_concurrency: %w", err)
+				return fmt.Errorf("invalid max_concurrency %q: %w (expected: positive integer)", val, err)
 			}
 			global.MaxConcurrency = n
 		case "metrics.mode":
@@ -175,7 +186,7 @@ func applyDirective(global *GlobalOptions, pairs map[string]string) error {
 			case string(MetricsModeBoth):
 				global.MetricsMode = MetricsModeBoth
 			default:
-				return fmt.Errorf("invalid metrics.mode: %q", val)
+				return fmt.Errorf("invalid metrics.mode %q (valid values: per-target, aggregated, both)", val)
 			}
 		case "metrics.listen":
 			if isDigits(val) {
@@ -186,18 +197,47 @@ func applyDirective(global *GlobalOptions, pairs map[string]string) error {
 		case "ui.scale":
 			n, err := strconv.Atoi(val)
 			if err != nil {
-				return fmt.Errorf("invalid ui.scale: %w", err)
+				return fmt.Errorf("invalid ui.scale %q: %w (expected: positive integer)", val, err)
 			}
 			global.UIScale = n
 		case "ui.disable":
 			b, err := strconv.ParseBool(val)
 			if err != nil {
-				return fmt.Errorf("invalid ui.disable: %w", err)
+				return fmt.Errorf("invalid ui.disable %q: %w (expected: true or false)", val, err)
 			}
 			global.UIDisable = b
 		default:
 			// Ignore unknown keys for forward compatibility.
 		}
+	}
+	return nil
+}
+
+func validateGlobal(path string, global *GlobalOptions) error {
+	if global.Interval <= 0 {
+		return &ConfigError{Path: path, Line: 0, Err: fmt.Errorf("interval must be positive, got %v (expected: e.g. 1s, 500ms)", global.Interval)}
+	}
+	if global.Timeout <= 0 {
+		return &ConfigError{Path: path, Line: 0, Err: fmt.Errorf("timeout must be positive, got %v (expected: e.g. 1s, 2s)", global.Timeout)}
+	}
+	if global.MaxConcurrency <= 0 {
+		return &ConfigError{Path: path, Line: 0, Err: fmt.Errorf("max_concurrency must be positive, got %d", global.MaxConcurrency)}
+	}
+	if global.UIScale <= 0 {
+		return &ConfigError{Path: path, Line: 0, Err: fmt.Errorf("ui.scale must be positive, got %d", global.UIScale)}
+	}
+	return nil
+}
+
+func validateTargetLine(path string, lineNum int, target TargetConfig, seenNames map[string]int) error {
+	if target.Name == "" {
+		return &ConfigError{Path: path, Line: lineNum, Err: fmt.Errorf("target name must be non-empty")}
+	}
+	if target.Address == "" {
+		return &ConfigError{Path: path, Line: lineNum, Err: fmt.Errorf("target address must be non-empty")}
+	}
+	if prev, ok := seenNames[target.Name]; ok {
+		return &ConfigError{Path: path, Line: lineNum, Err: fmt.Errorf("duplicate target name %q (already defined at line %d)", target.Name, prev)}
 	}
 	return nil
 }

@@ -205,3 +205,44 @@
 
 - [x] 12. 最終チェックポイント - 全機能テスト
   - 全てのテストが通ることを確認し、問題があれば質問する
+
+---
+
+## Roadmap: Configuration validation and better error messages
+
+README Roadmap の「Configuration validation and better error messages」に対応するタスク。
+
+- [x] 13. 設定バリデーションとエラーメッセージ改善
+- [x] 13.1 パース時エラーに行番号を含める
+  - LoadConfig 内で行番号を追跡し、ParseSurveillerDirective / ParseTargetLine / applyDirective のエラーに「ファイルパス:行番号」または「at line N」を付与する
+  - エラー型またはラッパーで line を保持し、main やテストでメッセージを検証しやすくする
+  - _要件: 1.5（構文エラー検出と適切なエラーメッセージ）_
+
+- [x] 13.2 グローバル設定のセマンティックバリデーション
+  - interval > 0、timeout > 0、max_concurrency > 0（および必要に応じて上限）、ui.scale > 0 を検証する
+  - 不正時はどのキーが不正かと期待値の例（例: "interval must be positive, got 0"）をエラーメッセージに含める
+  - applyDirective 適用後、または LoadConfig 末尾で Validate(GlobalOptions) を呼ぶ形で実装する
+  - _設計: design.md エラーハンドリング「設定エラー → 詳細なエラーメッセージ」_
+
+- [x] 13.3 ターゲット行のセマンティックバリデーション
+  - ターゲットの name および address が空でないことを検証する
+  - 重複する name の扱いを仕様化し、禁止する場合はエラーに、許可する場合は警告またはドキュメント化する
+  - 不正時は行番号と該当フィールドをエラーメッセージに含める
+
+- [x] 13.4 起動失敗時のエラー表示の改善
+  - 設定読み込み失敗時、main で LogConfigLoad に加え、stderr に人間が読める 1 行〜数行のメッセージ（例: "config error: <path>:<line>: <reason>"）を出力する
+  - ログがファイルのみの場合でも、ユーザーがターミナルで原因を把握できるようにする
+  - _要件: 1.5, 7.5（適切なエラーメッセージ表示）_
+
+- [x] 13.5 ディレクティブ・ターゲット行のエラーメッセージ文面の統一
+  - 不正なキー・値に対して「invalid <key>: <reason> (expected: ...)」形式や、CLI の metrics-mode と同様の "valid values: ..." を検討する
+  - metrics.mode 以外のディレクティブ（interval, timeout, ui.scale 等）で期待フォーマットや範囲をメッセージに含める
+
+- [x] 13.6 設定バリデーションの単体テスト
+  - 13.2: interval/timeout/max_concurrency/ui.scale の 0 以下・不正値でエラーになることをテスト
+  - 13.3: name または address が空の行でエラーになることをテスト
+  - 13.1: エラーメッセージに行番号が含まれることをテスト
+
+- [x] 13.7 ドキュメントの更新
+  - README または docs に、各ディレクティブの有効範囲・形式（interval/timeout は正の duration、max_concurrency は正の整数など）を記載する
+  - エラーが出た場合の代表例と対処（例: "invalid interval" → 1s, 500ms などの指定方法）を追記する

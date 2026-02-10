@@ -1,6 +1,25 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+// ConfigError is an error that includes config file path and optional line number.
+type ConfigError struct {
+	Path string
+	Line int // 1-based; 0 means unknown or global-level
+	Err  error
+}
+
+func (e *ConfigError) Error() string {
+	if e.Line > 0 {
+		return fmt.Sprintf("%s:%d: %s", e.Path, e.Line, e.Err.Error())
+	}
+	return fmt.Sprintf("%s: %s", e.Path, e.Err.Error())
+}
+
+func (e *ConfigError) Unwrap() error { return e.Err }
 
 // MetricsMode describes the granularity of metrics (future use).
 type MetricsMode string
