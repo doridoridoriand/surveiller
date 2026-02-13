@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-02-13
+
+### Added
+- Configuration validation with detailed error messages
+  - Add ConfigError type with file path and line number information
+  - Track line numbers for all configuration errors
+  - Semantic validation for global options (interval, timeout, max_concurrency, ui.scale must be > 0)
+  - Target validation (non-empty name/address, duplicate name detection)
+  - Unified error message format with "(expected: ...)" and "(valid values: ...)" patterns
+- Comprehensive tests for configuration validation
+  - Test for line number inclusion in error messages
+  - Test for invalid directive detection with line numbers
+  - Test for global option validation (zero values)
+  - Test for duplicate target name detection
+
+### Changed
+- Print configuration errors to stderr on startup failure for better error visibility
+- Improve error handling in main.go, CLI flags tests, and UI property tests
+
+### Fixed
+- Fix lint errors (errcheck, gosimple, staticcheck) across multiple files
+- Apply gofmt formatting to config types
+
+### Documentation
+- Document configuration validation and error troubleshooting in README.md
+- Mark configuration validation tasks (13.1–13.7) complete in specification
+- Update documentation with configuration error examples and troubleshooting guide
+
 ## [0.0.9] - 2026-01-18
 
 ### Added
