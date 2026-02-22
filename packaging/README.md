@@ -37,6 +37,7 @@ packaging/
 │   └── surveiller.nuspec.tmpl
 ├── homebrew/
 │   └── surveiller.rb.tmpl
-└── nfpm/
-    └── nfpm.yaml
+├── nfpm/
+│   └── nfpm.yaml
+└── release-manifest.schema.json
 ```

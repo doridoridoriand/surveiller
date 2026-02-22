@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/doridoridoriand/surveiller/packaging/release-manifest.schema.json",
+  "title": "Surveiller Release Manifest",
+  "description": "Shared release metadata for package build and publish workflows.",
+  "type": "object",
+  "required": [
+    "version",
+    "version_normalized",
+    "commit_sha",
+    "release_date",
+    "repository",
+    "release_base_url",
+    "artifacts",
+    "checksums",
+    "package_versions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "version_normalized": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-.~+][0-9A-Za-z.-]+)?$"
+    },
+    "commit_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "release_base_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/buildArtifact"
+      }
+    },
+    "checksums": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "package_versions": {
+      "type": "object",
+      "required": [
+        "apt",
+        "dnf",
+        "brew",
+        "choco"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "apt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dnf": {
+          "type": "string",
+          "minLength": 1
+        },
+        "brew": {
+          "type": "string",
+          "minLength": 1
+        },
+        "choco": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "buildArtifact": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "os",
+        "arch",
+        "url",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "binary",
+            "deb",
+            "rpm",
+            "formula",
+            "nupkg"
+          ]
+        },
+        "os": {
+          "type": "string",
+          "enum": [
+            "linux",
+            "darwin",
+            "windows"
+          ]
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}
