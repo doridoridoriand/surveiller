@@ -13,11 +13,11 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Create packaging directory scaffold and usage note in `packaging/README.md`
-- [ ] T002 Add base nfpm configuration skeleton in `packaging/nfpm/nfpm.yaml`
-- [ ] T003 Add Homebrew formula template in `packaging/homebrew/surveiller.rb.tmpl`
-- [ ] T004 Add Chocolatey nuspec template in `packaging/choco/surveiller.nuspec.tmpl`
-- [ ] T005 Add package build helper targets in `Makefile`
+- [x] T001 Create packaging directory scaffold and usage note in `packaging/README.md`
+- [x] T002 Add base nfpm configuration skeleton in `packaging/nfpm/nfpm.yaml`
+- [x] T003 Add Homebrew formula template in `packaging/homebrew/surveiller.rb.tmpl`
+- [x] T004 Add Chocolatey nuspec template in `packaging/choco/surveiller.nuspec.tmpl`
+- [x] T005 Add package build helper targets in `Makefile`
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
@@ -112,4 +112,3 @@ US3 parallel set (after T025):
 2. Increment 2: implement US2 to automate publication to each ecosystem.
 3. Increment 3: implement US3 to add install validation and user-facing installation docs.
 4. Finalize with Polish tasks for rollback, key management, and operational readiness.
-

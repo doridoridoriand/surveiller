@@ -1,0 +1,26 @@
+name: surveiller
+arch: amd64
+platform: linux
+version: 0.0.0-dev
+section: net
+priority: optional
+maintainer: Surveiller Maintainers <maintainers@surveiller.local>
+description: |
+  surveiller is a ping-based host monitoring CLI with a terminal UI.
+license: MIT
+homepage: https://github.com/doridoridoriand/surveiller
+
+contents:
+  - src: ./dist/surveiller-linux-amd64
+    dst: /usr/local/bin/surveiller
+    file_info:
+      mode: 0755
+
+overrides:
+  deb:
+    depends:
+      - iputils-ping
+  rpm:
+    depends:
+      - iputils
+

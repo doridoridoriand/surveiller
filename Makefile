@@ -4,8 +4,14 @@ BIN_DIR ?= bin
 PKG ?= ./...
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS ?= -s -w -X main.version=$(VERSION)
+PACKAGING_SCRIPT_DIR ?= scripts/packaging
+PACKAGING_MANIFEST_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/generate_release_manifest.sh
+PACKAGING_LINUX_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/build_linux_packages.sh
+PACKAGING_HOMEBREW_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/render_homebrew_formula.sh
+PACKAGING_CHOCO_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/build_choco_package.ps1
 
-.PHONY: all build test test-prop test-all lint clean clean-build fmt vet install
+.PHONY: all build test test-prop test-all lint clean clean-build fmt vet install \
+	package-help package-manifest package-linux package-homebrew package-choco package-build
 
 all: build
 
@@ -57,6 +63,49 @@ release:
 	GOOS=darwin GOARCH=arm64 $(GO) build -ldflags="$(LDFLAGS)" -o dist/$(BINARY)-darwin-arm64 .
 	GOOS=windows GOARCH=amd64 $(GO) build -ldflags="$(LDFLAGS)" -o dist/$(BINARY)-windows-amd64.exe .
 	@cd dist && sha256sum * > checksums.txt
+
+# Package build helpers (Phase 1 scaffold)
+package-help:
+	@echo "Package helper targets:"
+	@echo "  make package-manifest  # Generate release manifest (Phase 2)"
+	@echo "  make package-linux     # Build DEB/RPM packages (US1/T012)"
+	@echo "  make package-homebrew  # Render Homebrew formula (US1/T013)"
+	@echo "  make package-choco     # Build Chocolatey package payload (US1/T014)"
+	@echo "  make package-build     # Run all package helper steps"
+
+package-manifest:
+	@if [ -x "$(PACKAGING_MANIFEST_SCRIPT)" ]; then \
+		"$(PACKAGING_MANIFEST_SCRIPT)"; \
+	else \
+		echo "Skipping: $(PACKAGING_MANIFEST_SCRIPT) is not available yet (Phase 2/T006)."; \
+	fi
+
+package-linux:
+	@if [ -x "$(PACKAGING_LINUX_SCRIPT)" ]; then \
+		"$(PACKAGING_LINUX_SCRIPT)"; \
+	else \
+		echo "Skipping: $(PACKAGING_LINUX_SCRIPT) is not available yet (US1/T012)."; \
+	fi
+
+package-homebrew:
+	@if [ -x "$(PACKAGING_HOMEBREW_SCRIPT)" ]; then \
+		"$(PACKAGING_HOMEBREW_SCRIPT)"; \
+	else \
+		echo "Skipping: $(PACKAGING_HOMEBREW_SCRIPT) is not available yet (US1/T013)."; \
+	fi
+
+package-choco:
+	@if [ -f "$(PACKAGING_CHOCO_SCRIPT)" ]; then \
+		if command -v pwsh >/dev/null 2>&1; then \
+			pwsh -File "$(PACKAGING_CHOCO_SCRIPT)"; \
+		else \
+			echo "Skipping: pwsh is not installed; cannot run $(PACKAGING_CHOCO_SCRIPT)."; \
+		fi \
+	else \
+		echo "Skipping: $(PACKAGING_CHOCO_SCRIPT) is not available yet (US1/T014)."; \
+	fi
+
+package-build: package-manifest package-linux package-homebrew package-choco
 
 # Release management
 release-check:
