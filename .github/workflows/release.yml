@@ -98,6 +98,26 @@ jobs:
         echo "Checksums created:"
         cat checksums.txt
 
+    - name: Generate release manifest
+      env:
+        VERSION: ${{ steps.version.outputs.VERSION }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        chmod +x scripts/packaging/generate_release_manifest.sh
+        chmod +x scripts/packaging/normalize_version.sh
+        ./scripts/packaging/generate_release_manifest.sh \
+          --version "${VERSION}" \
+          --commit-sha "${GITHUB_SHA}" \
+          --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --repository "${GITHUB_REPOSITORY}" \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt \
+          --schema packaging/release-manifest.schema.json \
+          --output dist/release-manifest.json
+        echo "Release manifest:"
+        cat dist/release-manifest.json
+
     - name: Create release notes
       env:
         VERSION: ${{ steps.version.outputs.VERSION }}

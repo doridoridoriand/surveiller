@@ -21,11 +21,11 @@
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T006 Implement release manifest generator in `scripts/packaging/generate_release_manifest.sh`
-- [ ] T007 [P] Add release manifest schema in `packaging/release-manifest.schema.json`
-- [ ] T008 [P] Implement semantic version normalization helper in `scripts/packaging/normalize_version.sh`
-- [ ] T009 Implement shared packaging environment loader in `scripts/packaging/lib/common.sh`
-- [ ] T010 Update release artifact baseline stage in `.github/workflows/release.yml`
+- [x] T006 Implement release manifest generator in `scripts/packaging/generate_release_manifest.sh`
+- [x] T007 [P] Add release manifest schema in `packaging/release-manifest.schema.json`
+- [x] T008 [P] Implement semantic version normalization helper in `scripts/packaging/normalize_version.sh`
+- [x] T009 Implement shared packaging environment loader in `scripts/packaging/lib/common.sh`
+- [x] T010 Update release artifact baseline stage in `.github/workflows/release.yml`
 
 ## Phase 3: User Story 1 (P1) - Build Package Artifacts
 
