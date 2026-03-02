@@ -1,0 +1,388 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to publish (e.g., v1.2.3)'
+        required: false
+        default: ''
+      managers:
+        description: 'Comma-separated managers (apt,dnf,brew,choco)'
+        required: false
+        default: 'apt,dnf,brew,choco'
+      dry_run:
+        description: 'Run publication in dry-run mode'
+        required: false
+        type: boolean
+        default: true
+      retry_failed_once:
+        description: 'Retry failed publication once'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-package-artifacts:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      managers: ${{ steps.meta.outputs.managers }}
+      dry_run: ${{ steps.meta.outputs.dry_run }}
+      retry_failed_once: ${{ steps.meta.outputs.retry_failed_once }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.11'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Resolve publish inputs
+      id: meta
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        normalize_managers() {
+          local raw="$1"
+          local out=""
+          local token trimmed mapped
+          IFS=',' read -r -a tokens <<< "${raw}"
+          for token in "${tokens[@]}"; do
+            trimmed="$(printf '%s' "${token}" | xargs)"
+            [ -n "${trimmed}" ] || continue
+            case "${trimmed}" in
+              choro)
+                mapped="choco"
+                ;;
+              apt|dnf|brew|choco)
+                mapped="${trimmed}"
+                ;;
+              *)
+                echo "Unsupported manager: ${trimmed}" >&2
+                exit 1
+                ;;
+            esac
+            if [[ ",${out}," != *",${mapped},"* ]]; then
+              if [ -n "${out}" ]; then
+                out="${out},${mapped}"
+              else
+                out="${mapped}"
+              fi
+            fi
+          done
+          if [ -z "${out}" ]; then
+            out="apt,dnf,brew,choco"
+          fi
+          printf '%s\n' "${out}"
+        }
+
+        if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          version="${{ inputs.version }}"
+          if [ -z "${version}" ]; then
+            version="$(git describe --tags --abbrev=0 2>/dev/null || echo "")"
+          fi
+          managers="$(normalize_managers "${{ inputs.managers }}")"
+          dry_run="${{ inputs.dry_run }}"
+          retry_failed_once="${{ inputs.retry_failed_once }}"
+        else
+          version="${GITHUB_REF#refs/tags/}"
+          managers="apt,dnf,brew,choco"
+          dry_run="false"
+          retry_failed_once="true"
+        fi
+
+        if [ -z "${version}" ]; then
+          echo "Could not resolve release version." >&2
+          exit 1
+        fi
+
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "managers=${managers}" >> "$GITHUB_OUTPUT"
+        echo "dry_run=${dry_run}" >> "$GITHUB_OUTPUT"
+        echo "retry_failed_once=${retry_failed_once}" >> "$GITHUB_OUTPUT"
+
+    - name: Install packaging tools
+      run: |
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+        go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.1
+        nfpm --version
+        pwsh --version
+
+    - name: Build binaries and package artifacts
+      env:
+        VERSION: ${{ steps.meta.outputs.version }}
+      run: |
+        make release
+        ./scripts/packaging/generate_release_manifest.sh \
+          --version "${VERSION}" \
+          --commit-sha "${GITHUB_SHA}" \
+          --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --repository "${GITHUB_REPOSITORY}" \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt \
+          --schema packaging/release-manifest.schema.json \
+          --output dist/release-manifest.json
+
+        ./scripts/packaging/build_linux_packages.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        ./scripts/packaging/render_homebrew_formula.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        pwsh -File ./scripts/packaging/build_choco_package.ps1 \
+          -ManifestPath dist/release-manifest.json \
+          -DistDir dist \
+          -ChecksumsFile dist/checksums.txt
+
+        ./scripts/packaging/verify_package_artifacts.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: package-artifacts-${{ steps.meta.outputs.version }}
+        path: dist/
+
+  publish-manager:
+    needs: build-package-artifacts
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - manager: apt
+            runner: ubuntu-latest
+          - manager: dnf
+            runner: ubuntu-latest
+          - manager: brew
+            runner: ubuntu-latest
+          - manager: choco
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download package artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: package-artifacts-${{ needs.build-package-artifacts.outputs.version }}
+        path: dist
+
+    - name: Normalize artifact layout
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -f dist/dist/release-manifest.json ] && [ ! -f dist/release-manifest.json ]; then
+          cp -R dist/dist/. dist/
+          find dist/dist -mindepth 1 -delete
+          rmdir dist/dist
+        fi
+
+    - name: Select manager
+      id: selector
+      shell: bash
+      run: |
+        set -euo pipefail
+        managers="$(printf '%s' "${{ needs.build-package-artifacts.outputs.managers }}" | tr -d '[:space:]')"
+        if [[ ",${managers}," == *",${{ matrix.manager }},"* ]]; then
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Install Linux repo tools
+      if: matrix.runner == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y apt-utils createrepo-c gpg
+
+    - name: Publish attempt 1 (bash managers)
+      id: publish1_bash
+      if: steps.selector.outputs.enabled == 'true' && matrix.manager != 'choco'
+      continue-on-error: true
+      shell: bash
+      env:
+        VERSION: ${{ needs.build-package-artifacts.outputs.version }}
+        DRY_RUN: ${{ needs.build-package-artifacts.outputs.dry_run }}
+      run: |
+        set -euo pipefail
+        case "${{ matrix.manager }}" in
+          apt)
+            ./scripts/packaging/publish_apt_repo.sh \
+              --version "${VERSION}" \
+              --manifest dist/release-manifest.json \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 1 \
+              --status-file dist/publication-status/apt.json
+            ;;
+          dnf)
+            ./scripts/packaging/publish_dnf_repo.sh \
+              --version "${VERSION}" \
+              --manifest dist/release-manifest.json \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 1 \
+              --status-file dist/publication-status/dnf.json
+            ;;
+          brew)
+            ./scripts/packaging/publish_homebrew_tap.sh \
+              --version "${VERSION}" \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 1 \
+              --status-file dist/publication-status/brew.json
+            ;;
+          *)
+            echo "Unsupported manager: ${{ matrix.manager }}" >&2
+            exit 1
+            ;;
+        esac
+
+    - name: Publish attempt 1 (choco)
+      id: publish1_choco
+      if: steps.selector.outputs.enabled == 'true' && matrix.manager == 'choco'
+      continue-on-error: true
+      shell: pwsh
+      env:
+        VERSION: ${{ needs.build-package-artifacts.outputs.version }}
+        DRY_RUN: ${{ needs.build-package-artifacts.outputs.dry_run }}
+      run: |
+        ./scripts/packaging/publish_choco_package.ps1 `
+          -Version "$env:VERSION" `
+          -ManifestPath "dist/release-manifest.json" `
+          -DistDir "dist" `
+          -DryRun "$env:DRY_RUN" `
+          -Attempt 1 `
+          -StatusFile "dist/publication-status/choco.json"
+
+    - name: Retry attempt 2 (bash managers)
+      if: steps.selector.outputs.enabled == 'true' && matrix.manager != 'choco' && needs.build-package-artifacts.outputs.retry_failed_once == 'true' && steps.publish1_bash.outcome == 'failure'
+      continue-on-error: true
+      shell: bash
+      env:
+        VERSION: ${{ needs.build-package-artifacts.outputs.version }}
+        DRY_RUN: ${{ needs.build-package-artifacts.outputs.dry_run }}
+      run: |
+        set -euo pipefail
+        case "${{ matrix.manager }}" in
+          apt)
+            ./scripts/packaging/publish_apt_repo.sh \
+              --version "${VERSION}" \
+              --manifest dist/release-manifest.json \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 2 \
+              --status-file dist/publication-status/apt.json
+            ;;
+          dnf)
+            ./scripts/packaging/publish_dnf_repo.sh \
+              --version "${VERSION}" \
+              --manifest dist/release-manifest.json \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 2 \
+              --status-file dist/publication-status/dnf.json
+            ;;
+          brew)
+            ./scripts/packaging/publish_homebrew_tap.sh \
+              --version "${VERSION}" \
+              --dist-dir dist \
+              --dry-run "${DRY_RUN}" \
+              --attempt 2 \
+              --status-file dist/publication-status/brew.json
+            ;;
+        esac
+
+    - name: Retry attempt 2 (choco)
+      if: steps.selector.outputs.enabled == 'true' && matrix.manager == 'choco' && needs.build-package-artifacts.outputs.retry_failed_once == 'true' && steps.publish1_choco.outcome == 'failure'
+      continue-on-error: true
+      shell: pwsh
+      env:
+        VERSION: ${{ needs.build-package-artifacts.outputs.version }}
+        DRY_RUN: ${{ needs.build-package-artifacts.outputs.dry_run }}
+      run: |
+        ./scripts/packaging/publish_choco_package.ps1 `
+          -Version "$env:VERSION" `
+          -ManifestPath "dist/release-manifest.json" `
+          -DistDir "dist" `
+          -DryRun "$env:DRY_RUN" `
+          -Attempt 2 `
+          -StatusFile "dist/publication-status/choco.json"
+
+    - name: Upload manager publication status
+      if: always() && steps.selector.outputs.enabled == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: publication-status-${{ matrix.manager }}
+        path: dist/publication-status/${{ matrix.manager }}.json
+        if-no-files-found: error
+
+  collect-status:
+    needs:
+      - build-package-artifacts
+      - publish-manager
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download publication status artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: publication-status-*
+        path: dist/publication-status
+        merge-multiple: true
+
+    - name: Collect publication summary
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+        ./scripts/packaging/collect_publication_status.sh \
+          --status-dir dist/publication-status \
+          --output dist/publication-status/summary.json \
+          --summary-md dist/publication-status/summary.md \
+          --require-managers "${{ needs.build-package-artifacts.outputs.managers }}" \
+          --github-output "$GITHUB_OUTPUT" \
+          --fail-on-failed true
+
+    - name: Publish summary
+      if: always()
+      run: |
+        cat dist/publication-status/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload publication summary artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: publication-status-summary
+        path: |
+          dist/publication-status/summary.json
+          dist/publication-status/summary.md

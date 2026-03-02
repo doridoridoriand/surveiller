@@ -187,6 +187,77 @@ packaging_sort_checksums_file() {
   mv "${tmp}" "${checksums_file}"
 }
 
+packaging_bool_is_true() {
+  local value="${1:-}"
+  value="$(printf '%s' "${value}" | tr '[:upper:]' '[:lower:]')"
+  case "${value}" in
+    1|true|yes|on)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+packaging_write_publication_status() {
+  local status_file="$1"
+  local manager="$2"
+  local version="$3"
+  local state="$4"
+  local target="$5"
+  local attempt="$6"
+  local artifact_count="$7"
+  local published_at="${8:-}"
+  local error_message="${9:-}"
+
+  mkdir -p "$(dirname "${status_file}")"
+
+  if command -v jq >/dev/null 2>&1; then
+    jq -n \
+      --arg manager "${manager}" \
+      --arg version "${version}" \
+      --arg state "${state}" \
+      --arg target "${target}" \
+      --arg published_at "${published_at}" \
+      --arg error_message "${error_message}" \
+      --argjson attempt "${attempt}" \
+      --argjson artifact_count "${artifact_count}" \
+      '{
+        manager: $manager,
+        version: $version,
+        state: $state,
+        repository_target: $target,
+        attempt: $attempt,
+        artifact_count: $artifact_count,
+        published_at: (if $published_at == "" then null else $published_at end),
+        error_message: (if $error_message == "" then null else $error_message end)
+      }' > "${status_file}"
+    return 0
+  fi
+
+  {
+    printf '{\n'
+    printf '  "manager": "%s",\n' "$(packaging_json_escape "${manager}")"
+    printf '  "version": "%s",\n' "$(packaging_json_escape "${version}")"
+    printf '  "state": "%s",\n' "$(packaging_json_escape "${state}")"
+    printf '  "repository_target": "%s",\n' "$(packaging_json_escape "${target}")"
+    printf '  "attempt": %s,\n' "$(packaging_json_escape "${attempt}")"
+    printf '  "artifact_count": %s,\n' "$(packaging_json_escape "${artifact_count}")"
+    if [ -n "${published_at}" ]; then
+      printf '  "published_at": "%s",\n' "$(packaging_json_escape "${published_at}")"
+    else
+      printf '  "published_at": null,\n'
+    fi
+    if [ -n "${error_message}" ]; then
+      printf '  "error_message": "%s"\n' "$(packaging_json_escape "${error_message}")"
+    else
+      printf '  "error_message": null\n'
+    fi
+    printf '}\n'
+  } > "${status_file}"
+}
+
 packaging_lookup_checksum() {
   local checksums_file="$1"
   local target_file="$2"

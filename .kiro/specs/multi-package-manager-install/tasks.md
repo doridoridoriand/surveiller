@@ -35,13 +35,13 @@ Tag releaseで `.deb` / `.rpm` / Homebrew formula payload / Chocolatey payload �
 Independent test criteria:
 `.github/workflows/test-release.yml` 実行結果に、既存バイナリ + パッケージ成果物 + checksum/license/versionメタデータが含まれること。
 
-- [ ] T011 [US1] Define DEB/RPM package metadata and contents in `packaging/nfpm/nfpm.yaml`
-- [ ] T012 [P] [US1] Implement Linux package build script in `scripts/packaging/build_linux_packages.sh`
-- [ ] T013 [P] [US1] Implement Homebrew formula rendering script in `scripts/packaging/render_homebrew_formula.sh`
-- [ ] T014 [P] [US1] Implement Chocolatey package assembly script in `scripts/packaging/build_choco_package.ps1`
-- [ ] T015 [US1] Wire package build jobs into `.github/workflows/release.yml`
-- [ ] T016 [US1] Add package artifact assertions in `.github/workflows/test-release.yml`
-- [ ] T017 [US1] Add package artifact integrity verification script in `scripts/packaging/verify_package_artifacts.sh`
+- [x] T011 [US1] Define DEB/RPM package metadata and contents in `packaging/nfpm/nfpm.yaml`
+- [x] T012 [P] [US1] Implement Linux package build script in `scripts/packaging/build_linux_packages.sh`
+- [x] T013 [P] [US1] Implement Homebrew formula rendering script in `scripts/packaging/render_homebrew_formula.sh`
+- [x] T014 [P] [US1] Implement Chocolatey package assembly script in `scripts/packaging/build_choco_package.ps1`
+- [x] T015 [US1] Wire package build jobs into `.github/workflows/release.yml`
+- [x] T016 [US1] Add package artifact assertions in `.github/workflows/test-release.yml`
+- [x] T017 [US1] Add package artifact integrity verification script in `scripts/packaging/verify_package_artifacts.sh`
 
 ## Phase 4: User Story 2 (P2) - Publish Repository/Tap/Feed
 
@@ -51,13 +51,13 @@ Story goal:
 Independent test criteria:
 公開ワークフローの dry-run で4マネージャすべての publish ステップが成功し、publication status 出力が `published` または `queued` の期待状態になること。
 
-- [ ] T018 [US2] Create package publication workflow in `.github/workflows/publish-packages.yml`
-- [ ] T019 [P] [US2] Implement APT repository publish and sign script in `scripts/packaging/publish_apt_repo.sh`
-- [ ] T020 [P] [US2] Implement DNF repository publish and sign script in `scripts/packaging/publish_dnf_repo.sh`
-- [ ] T021 [P] [US2] Implement Homebrew tap publication script in `scripts/packaging/publish_homebrew_tap.sh`
-- [ ] T022 [P] [US2] Implement Chocolatey publication script in `scripts/packaging/publish_choco_package.ps1`
-- [ ] T023 [US2] Implement publication status collector in `scripts/packaging/collect_publication_status.sh`
-- [ ] T024 [US2] Wire status summary and retry handling in `.github/workflows/publish-packages.yml`
+- [x] T018 [US2] Create package publication workflow in `.github/workflows/publish-packages.yml`
+- [x] T019 [P] [US2] Implement APT repository publish and sign script in `scripts/packaging/publish_apt_repo.sh`
+- [x] T020 [P] [US2] Implement DNF repository publish and sign script in `scripts/packaging/publish_dnf_repo.sh`
+- [x] T021 [P] [US2] Implement Homebrew tap publication script in `scripts/packaging/publish_homebrew_tap.sh`
+- [x] T022 [P] [US2] Implement Chocolatey publication script in `scripts/packaging/publish_choco_package.ps1`
+- [x] T023 [US2] Implement publication status collector in `scripts/packaging/collect_publication_status.sh`
+- [x] T024 [US2] Wire status summary and retry handling in `.github/workflows/publish-packages.yml`
 
 ## Phase 5: User Story 3 (P3) - Install Validation and User Documentation
 
