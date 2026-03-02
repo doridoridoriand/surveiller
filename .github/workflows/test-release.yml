@@ -82,6 +82,67 @@ jobs:
         echo "Test checksums:"
         cat checksums.txt
 
+    - name: Generate release manifest
+      env:
+        VERSION: ${{ github.event.inputs.test_version }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        chmod +x scripts/packaging/generate_release_manifest.sh
+        chmod +x scripts/packaging/normalize_version.sh
+        ./scripts/packaging/generate_release_manifest.sh \
+          --version "${VERSION}" \
+          --commit-sha "${GITHUB_SHA}" \
+          --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --repository "${GITHUB_REPOSITORY}" \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt \
+          --schema packaging/release-manifest.schema.json \
+          --output dist/release-manifest.json
+        cat dist/release-manifest.json
+
+    - name: Install packaging tools
+      run: |
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+        go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.1
+        nfpm --version
+
+    - name: Build package artifacts
+      run: |
+        chmod +x scripts/packaging/build_linux_packages.sh
+        chmod +x scripts/packaging/render_homebrew_formula.sh
+        chmod +x scripts/packaging/verify_package_artifacts.sh
+
+        ./scripts/packaging/build_linux_packages.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        ./scripts/packaging/render_homebrew_formula.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        pwsh -File ./scripts/packaging/build_choco_package.ps1 \
+          -ManifestPath dist/release-manifest.json \
+          -DistDir dist \
+          -ChecksumsFile dist/checksums.txt
+
+    - name: Assert package artifacts
+      run: |
+        ls -la dist/packages/linux/*.deb
+        ls -la dist/packages/linux/*.rpm
+        test -f dist/packages/homebrew/surveiller.rb
+        ls -la dist/packages/choco/*.nupkg
+        test -f dist/packages/choco/surveiller.nuspec
+
+    - name: Verify package artifact integrity
+      run: |
+        ./scripts/packaging/verify_package_artifacts.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
     - name: Upload test artifacts
       uses: actions/upload-artifact@v4
       with:
