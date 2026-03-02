@@ -9,9 +9,10 @@ PACKAGING_MANIFEST_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/generate_release_manifest.s
 PACKAGING_LINUX_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/build_linux_packages.sh
 PACKAGING_HOMEBREW_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/render_homebrew_formula.sh
 PACKAGING_CHOCO_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/build_choco_package.ps1
+PACKAGING_SMOKE_SCRIPT ?= $(PACKAGING_SCRIPT_DIR)/ci/smoke_us1.sh
 
 .PHONY: all build test test-prop test-all lint clean clean-build fmt vet install \
-	package-help package-manifest package-linux package-homebrew package-choco package-build
+	package-help package-manifest package-linux package-homebrew package-choco package-build package-smoke
 
 all: build
 
@@ -106,6 +107,13 @@ package-choco:
 	fi
 
 package-build: package-manifest package-linux package-homebrew package-choco
+
+package-smoke:
+	@if [ -x "$(PACKAGING_SMOKE_SCRIPT)" ]; then \
+		"$(PACKAGING_SMOKE_SCRIPT)"; \
+	else \
+		echo "Skipping: $(PACKAGING_SMOKE_SCRIPT) is not available."; \
+	fi
 
 # Release management
 release-check:
