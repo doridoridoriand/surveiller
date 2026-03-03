@@ -147,7 +147,9 @@ main() {
       deb_name="$(dpkg-deb -f "${pkg}" Package)"
       deb_version="$(dpkg-deb -f "${pkg}" Version)"
       [ "${deb_name}" = "surveiller" ] || packaging_die "deb metadata package name mismatch in ${pkg}: ${deb_name}"
-      [ "${deb_version}" = "${apt_version}" ] || packaging_die "deb metadata version mismatch in ${pkg}: ${deb_version}"
+      if [[ ! "${deb_version}" =~ ^${apt_version}(-[0-9]+)?$ ]]; then
+        packaging_die "deb metadata version mismatch in ${pkg}: ${deb_version}"
+      fi
     fi
   done
 
