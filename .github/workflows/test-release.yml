@@ -72,8 +72,12 @@ jobs:
       run: |
         echo "Testing Linux binary version..."
         ./dist/surveiller-linux-amd64 -version
-        echo "Testing macOS binary version..."
-        ./dist/surveiller-darwin-amd64 -version
+        echo "Verifying cross-platform binary artifacts..."
+        test -f ./dist/surveiller-linux-arm64
+        test -f ./dist/surveiller-darwin-amd64
+        test -f ./dist/surveiller-darwin-arm64
+        test -f ./dist/surveiller-windows-amd64.exe
+        file ./dist/surveiller-*
 
     - name: Create test checksums
       run: |
