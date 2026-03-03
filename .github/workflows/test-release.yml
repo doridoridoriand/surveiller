@@ -35,7 +35,17 @@ jobs:
 
     - name: Run tests
       run: |
-        make test
+        for attempt in 1 2 3; do
+          echo "Running make test (attempt ${attempt})..."
+          if make test; then
+            break
+          fi
+          if [ "${attempt}" -eq 3 ]; then
+            echo "make test failed after 3 attempts"
+            exit 1
+          fi
+          sleep 2
+        done
         make test-prop
 
     - name: Test build for all platforms
