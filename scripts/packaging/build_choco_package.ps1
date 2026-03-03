@@ -50,7 +50,7 @@ function Upsert-Checksum {
 
   $pattern = '^[a-fA-F0-9]{64}$'
   if ($Checksum -notmatch $pattern) {
-    throw "invalid SHA256 for $ArtifactName: $Checksum"
+    throw "invalid SHA256 for ${ArtifactName}: $Checksum"
   }
 
   $rows = @()
