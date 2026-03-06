@@ -56,6 +56,16 @@ function Write-Status {
     [string]$ErrorMessage
   )
 
+  $publishedAtIso = $null
+  if ($null -ne $PublishedAt) {
+    try {
+      $publishedAtIso = ([DateTime]$PublishedAt).ToUniversalTime().ToString("o")
+    }
+    catch {
+      $publishedAtIso = $null
+    }
+  }
+
   $statusObject = [ordered]@{
     manager = $Manager
     version = $ReleaseVersion
@@ -63,7 +73,7 @@ function Write-Status {
     repository_target = $Target
     attempt = $AttemptNumber
     artifact_count = $ArtifactCount
-    published_at = if ($null -eq $PublishedAt) { $null } else { $PublishedAt.Value.ToUniversalTime().ToString("o") }
+    published_at = $publishedAtIso
     error_message = if ([string]::IsNullOrWhiteSpace($ErrorMessage)) { $null } else { $ErrorMessage }
   }
 
@@ -144,9 +154,20 @@ else {
   }
   else {
     try {
-      & choco push $packageAbs --source $target --api-key $env:CHOCO_API_KEY --timeout 900 | Out-Null
+      $pushLog = New-Object System.Collections.Generic.List[string]
+      & choco push $packageAbs --source $target --api-key $env:CHOCO_API_KEY --timeout 900 2>&1 | ForEach-Object {
+        $line = $_.ToString()
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+          $pushLog.Add($line)
+          Write-Host $line
+        }
+      }
       if ($LASTEXITCODE -ne 0) {
-        throw "choco push exited with code $LASTEXITCODE"
+        $captured = ($pushLog -join "`n").Trim()
+        if ([string]::IsNullOrWhiteSpace($captured)) {
+          $captured = "(no choco output captured)"
+        }
+        throw "choco push exited with code $LASTEXITCODE. output: $captured"
       }
       $state = "published"
       $publishedAt = [DateTime]::UtcNow
