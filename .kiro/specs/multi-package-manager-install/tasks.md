@@ -78,10 +78,10 @@ install smoke test workflow が Ubuntu/Fedora/macOS/Windows の各ジョブで `
 
 ## Final Phase: Polish & Cross-Cutting
 
-- [ ] T033 Add rollback runbook for failed publication in `docs/package-repository-operations.md`
-- [ ] T034 [P] Add signing key rotation checklist in `docs/RELEASE.md`
-- [ ] T035 [P] Add package-manager troubleshooting notes in `README.md`
-- [ ] T036 Add final verification checklist in `.kiro/specs/multi-package-manager-install/quickstart.md`
+- [x] T033 Add rollback runbook for failed publication in `docs/package-repository-operations.md`
+- [x] T034 [P] Add signing key rotation checklist in `docs/RELEASE.md`
+- [x] T035 [P] Add package-manager troubleshooting notes in `README.md`
+- [x] T036 Add final verification checklist in `.kiro/specs/multi-package-manager-install/quickstart.md`
 
 ## Dependencies (User Story Order)
 

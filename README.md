@@ -86,6 +86,29 @@ choco install surveiller -y
 choco install surveiller -y --source="'<choco-feed-url>'"
 ```
 
+### Package Manager Troubleshooting
+
+- General checks:
+  - Confirm package name is `surveiller`.
+  - Confirm the configured source URL/tap/feed points to your published endpoint.
+  - After install, verify with `surveiller -version`.
+- APT:
+  - If metadata is stale, run `sudo apt clean && sudo apt update`.
+  - If you see signing errors (`NO_PUBKEY`, `InRelease` verification issues), verify repository key configuration and key rotation state.
+  - If package download path is wrong, verify your APT source entry points to the repository root (the path that contains `dists/`).
+- DNF:
+  - Refresh metadata with `sudo dnf clean all && sudo dnf makecache --refresh`.
+  - If GPG or `repomd.xml` validation fails, verify repository key and signature files.
+  - Ensure your `.repo` file `baseurl` ends with `/packages`.
+- Homebrew:
+  - If formula is not found, run `brew tap <owner>/homebrew-tap`.
+  - If checksum mismatch occurs, run `brew update` and retry install.
+  - If an old formula is cached, run `brew uninstall surveiller` then install again from tap.
+- Chocolatey:
+  - If package is not found in private feeds, verify source configuration with `choco source list`.
+  - If authentication fails, verify API key and source URL.
+  - If a bad version was already published to an immutable feed, install/roll forward to the next fixed patch version.
+
 ### Build from Source
 
 ```bash

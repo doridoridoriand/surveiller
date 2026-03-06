@@ -51,3 +51,20 @@ surveiller -version
 - If one manager publish fails, mark manager status `failed` and do not block already-successful managers.
 - Re-run publish job for failed manager after fix.
 
+## 6. Final verification checklist
+
+- [ ] `release.yml` completed successfully for the target tag.
+- [ ] `publish-packages.yml` summary reports `failed=0`.
+- [ ] Publication status files exist for each target manager:
+  - `dist/publication-status/apt.json`
+  - `dist/publication-status/dnf.json`
+  - `dist/publication-status/brew.json`
+  - `dist/publication-status/choco.json`
+- [ ] `package-install-smoke.yml` passed for:
+  - `install-smoke-ubuntu`
+  - `install-smoke-fedora`
+  - `install-smoke-macos`
+  - `install-smoke-windows`
+- [ ] Package manager install snippets in `README.md` are still accurate for current endpoints.
+- [ ] `docs/RELEASE.md` key/secrets documentation reflects current operational values.
+- [ ] Rollback runbook location is known to operators: `docs/package-repository-operations.md`.

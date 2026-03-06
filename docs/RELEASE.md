@@ -117,6 +117,21 @@ Package publication is handled by `.github/workflows/publish-packages.yml`.
 - `HOMEBREW_TAP_PUSH_TOKEN`
 - `CHOCO_API_KEY`
 
+### Signing Key Rotation Checklist
+
+Use this checklist when rotating APT/RPM signing keys.
+
+- [ ] Create new APT signing keypair and RPM signing keypair.
+- [ ] Export private keys in ASCII-armored format for GitHub Secrets.
+- [ ] Update `APT_GPG_PRIVATE_KEY` and `RPM_GPG_PRIVATE_KEY`.
+- [ ] If private keys are passphrase-protected, update `APT_GPG_PASSPHRASE` and `RPM_GPG_PASSPHRASE`.
+- [ ] Keep previous public keys available during transition (do not revoke immediately).
+- [ ] Run `Publish Packages` with `dry_run=true` for `apt,dnf` and verify summary has no failures.
+- [ ] Run `Publish Packages` with `dry_run=false` and confirm repository metadata is signed.
+- [ ] Run `Package Install Smoke` and verify all four install jobs pass.
+- [ ] Update consumer setup docs/key distribution endpoints if key fingerprints changed.
+- [ ] After confirmed migration window, revoke and remove old signing keys.
+
 ### Recommended Procedure
 
 1. Run package publication in dry-run mode:
