@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>surveiller</id>
+    <version>{{ .ChocolateyVersion }}</version>
+    <title>surveiller</title>
+    <authors>surveiller maintainers</authors>
+    <projectUrl>https://github.com/doridoridoriand/surveiller</projectUrl>
+    <licenseUrl>https://github.com/doridoridoriand/surveiller/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/doridoridoriand/surveiller</projectSourceUrl>
+    <docsUrl>https://github.com/doridoridoriand/surveiller#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/doridoridoriand/surveiller/issues</bugTrackerUrl>
+    <summary>Ping-based host monitoring with terminal UI</summary>
+    <description>surveiller provides host status monitoring with configurable ping intervals and a terminal UI.</description>
+    <releaseNotes>https://github.com/doridoridoriand/surveiller/releases/tag/v{{ .Version }}</releaseNotes>
+    <tags>network monitoring ping terminal</tags>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
+

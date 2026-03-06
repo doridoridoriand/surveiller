@@ -1,0 +1,35 @@
+class Surveiller < Formula
+  desc "Ping-based host monitoring with terminal UI"
+  homepage "https://github.com/doridoridoriand/surveiller"
+  version "{{ .Version }}"
+  license "MIT"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "{{ .DarwinArm64URL }}"
+      sha256 "{{ .DarwinArm64SHA256 }}"
+    else
+      url "{{ .DarwinAmd64URL }}"
+      sha256 "{{ .DarwinAmd64SHA256 }}"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "{{ .LinuxArm64URL }}"
+      sha256 "{{ .LinuxArm64SHA256 }}"
+    else
+      url "{{ .LinuxAmd64URL }}"
+      sha256 "{{ .LinuxAmd64SHA256 }}"
+    end
+  end
+
+  def install
+    bin.install Dir["surveiller*"].first => "surveiller"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/surveiller -version")
+  end
+end
+

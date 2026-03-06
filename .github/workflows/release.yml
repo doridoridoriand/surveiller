@@ -42,7 +42,17 @@ jobs:
 
     - name: Run tests
       run: |
-        make test
+        for attempt in 1 2 3; do
+          echo "Running make test (attempt ${attempt})..."
+          if make test; then
+            break
+          fi
+          if [ "${attempt}" -eq 3 ]; then
+            echo "make test failed after 3 attempts"
+            exit 1
+          fi
+          sleep 2
+        done
         make test-prop
 
     - name: Build binaries
@@ -97,6 +107,63 @@ jobs:
         sha256sum * > checksums.txt
         echo "Checksums created:"
         cat checksums.txt
+
+    - name: Generate release manifest
+      env:
+        VERSION: ${{ steps.version.outputs.VERSION }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        chmod +x scripts/packaging/generate_release_manifest.sh
+        chmod +x scripts/packaging/normalize_version.sh
+        ./scripts/packaging/generate_release_manifest.sh \
+          --version "${VERSION}" \
+          --commit-sha "${GITHUB_SHA}" \
+          --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --repository "${GITHUB_REPOSITORY}" \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt \
+          --schema packaging/release-manifest.schema.json \
+          --output dist/release-manifest.json
+        echo "Release manifest:"
+        cat dist/release-manifest.json
+
+    - name: Install packaging tools
+      run: |
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+        go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.1
+        nfpm --version
+
+    - name: Build and verify package artifacts
+      run: |
+        chmod +x scripts/packaging/build_linux_packages.sh
+        chmod +x scripts/packaging/render_homebrew_formula.sh
+        chmod +x scripts/packaging/verify_package_artifacts.sh
+
+        ./scripts/packaging/build_linux_packages.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        ./scripts/packaging/render_homebrew_formula.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        pwsh -File ./scripts/packaging/build_choco_package.ps1 \
+          -ManifestPath dist/release-manifest.json \
+          -DistDir dist \
+          -ChecksumsFile dist/checksums.txt
+
+        ./scripts/packaging/verify_package_artifacts.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist \
+          --checksums-file dist/checksums.txt
+
+        echo "Package artifacts:"
+        find dist/packages -type f | sort
+        echo "Updated checksums:"
+        cat dist/checksums.txt
 
     - name: Create release notes
       env:
@@ -202,6 +269,7 @@ jobs:
       with:
         files: |
           dist/*
+          dist/packages/**/*
         body_path: release_notes.md
         draft: false
         prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}

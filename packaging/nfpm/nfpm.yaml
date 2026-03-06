@@ -1,0 +1,35 @@
+name: surveiller
+arch: "__NFPM_ARCH__"
+platform: linux
+version: "__NFPM_VERSION__"
+release: "1"
+section: net
+priority: optional
+maintainer: Surveiller Maintainers <maintainers@surveiller.local>
+description: |
+  surveiller is a ping-based host monitoring CLI with a terminal UI.
+license: MIT
+homepage: https://github.com/doridoridoriand/surveiller
+vendor: Surveiller Maintainers
+
+contents:
+  - src: "./dist/surveiller-linux-__SURVEILLER_BINARY_ARCH__"
+    dst: /usr/local/bin/surveiller
+    file_info:
+      mode: 0755
+  - src: ./LICENSE
+    dst: /usr/share/doc/surveiller/LICENSE
+    file_info:
+      mode: 0644
+  - src: ./README.md
+    dst: /usr/share/doc/surveiller/README.md
+    file_info:
+      mode: 0644
+
+overrides:
+  deb:
+    depends:
+      - iputils-ping
+  rpm:
+    depends:
+      - iputils
