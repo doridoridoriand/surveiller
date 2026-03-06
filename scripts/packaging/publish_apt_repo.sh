@@ -121,7 +121,8 @@ main() {
     error_message=""
   else
     set +e
-    {
+    (
+      set -e
       pool_dir="${repo_abs}/pool/main/s/surveiller"
       dists_dir="${repo_abs}/dists/stable/main"
       mkdir -p "${pool_dir}" "${dists_dir}"
@@ -135,13 +136,24 @@ main() {
           mkdir -p "${dists_dir}/binary-${arch}"
           apt-ftparchive packages "${pool_dir}" \
             | awk -v arch="${arch}" '
-                /^Architecture: / {
-                  a=$2
-                  if (a == "all" || a == arch) keep=1
-                  else keep=0
+                BEGIN {
+                  RS=""
+                  ORS="\n\n"
                 }
-                keep { print }
-                /^$/ { if (keep) print "" }
+                {
+                  package_arch=""
+                  line_count=split($0, lines, /\n/)
+                  for (i = 1; i <= line_count; i++) {
+                    if (lines[i] ~ /^Architecture:[[:space:]]+/) {
+                      split(lines[i], fields, /[[:space:]]+/)
+                      package_arch=fields[2]
+                      break
+                    }
+                  }
+                  if (package_arch == "all" || package_arch == arch) {
+                    print $0
+                  }
+                }
               ' > "${dists_dir}/binary-${arch}/Packages"
           gzip -f -k "${dists_dir}/binary-${arch}/Packages"
         done
@@ -166,7 +178,7 @@ main() {
           --detach-sign "${repo_abs}/dists/stable/Release"
         rm -rf "${gpg_home}"
       fi
-    }
+    )
     rc=$?
     set -e
 

@@ -121,7 +121,8 @@ main() {
     error_message=""
   else
     set +e
-    {
+    (
+      set -e
       packages_dir="${repo_abs}/packages"
       mkdir -p "${packages_dir}"
       for rpm_pkg in "${rpm_files[@]}"; do
@@ -145,7 +146,7 @@ main() {
           --detach-sign "${packages_dir}/repodata/repomd.xml"
         rm -rf "${gpg_home}"
       fi
-    }
+    )
     rc=$?
     set -e
 

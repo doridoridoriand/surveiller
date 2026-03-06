@@ -54,9 +54,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Install dependencies
-      run: go mod download
-
     - name: Resolve publish inputs
       id: meta
       shell: bash
@@ -122,6 +119,15 @@ jobs:
         echo "dry_run=${dry_run}" >> "$GITHUB_OUTPUT"
         echo "retry_failed_once=${retry_failed_once}" >> "$GITHUB_OUTPUT"
 
+    - name: Checkout publish version
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.meta.outputs.version }}
+
+    - name: Install dependencies
+      run: go mod download
+
     - name: Install packaging tools
       run: |
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
@@ -133,10 +139,11 @@ jobs:
       env:
         VERSION: ${{ steps.meta.outputs.version }}
       run: |
+        COMMIT_SHA="$(git rev-parse HEAD)"
         make release
         ./scripts/packaging/generate_release_manifest.sh \
           --version "${VERSION}" \
-          --commit-sha "${GITHUB_SHA}" \
+          --commit-sha "${COMMIT_SHA}" \
           --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
           --repository "${GITHUB_REPOSITORY}" \
           --dist-dir dist \
