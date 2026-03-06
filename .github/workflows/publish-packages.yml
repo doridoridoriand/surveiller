@@ -119,13 +119,23 @@ jobs:
         echo "dry_run=${dry_run}" >> "$GITHUB_OUTPUT"
         echo "retry_failed_once=${retry_failed_once}" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout publish version
+    - name: Checkout publish source
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ steps.meta.outputs.version }}
+        path: publish-src
+
+    - name: Inject packaging tooling into publish source
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p publish-src/scripts publish-src/packaging
+        rsync -a --delete scripts/packaging/ publish-src/scripts/packaging/
+        rsync -a --delete packaging/ publish-src/packaging/
 
     - name: Install dependencies
+      working-directory: publish-src
       run: go mod download
 
     - name: Install packaging tools
@@ -139,37 +149,43 @@ jobs:
       env:
         VERSION: ${{ steps.meta.outputs.version }}
       run: |
-        COMMIT_SHA="$(git rev-parse HEAD)"
-        make release
-        ./scripts/packaging/generate_release_manifest.sh \
-          --version "${VERSION}" \
-          --commit-sha "${COMMIT_SHA}" \
-          --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-          --repository "${GITHUB_REPOSITORY}" \
-          --dist-dir dist \
-          --checksums-file dist/checksums.txt \
-          --schema packaging/release-manifest.schema.json \
-          --output dist/release-manifest.json
+        set -euo pipefail
+        rm -rf dist
+        (
+          cd publish-src
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          make release
+          ./scripts/packaging/generate_release_manifest.sh \
+            --version "${VERSION}" \
+            --commit-sha "${COMMIT_SHA}" \
+            --release-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --dist-dir dist \
+            --checksums-file dist/checksums.txt \
+            --schema packaging/release-manifest.schema.json \
+            --output dist/release-manifest.json
 
-        ./scripts/packaging/build_linux_packages.sh \
-          --manifest dist/release-manifest.json \
-          --dist-dir dist \
-          --checksums-file dist/checksums.txt
+          ./scripts/packaging/build_linux_packages.sh \
+            --manifest dist/release-manifest.json \
+            --dist-dir dist \
+            --checksums-file dist/checksums.txt
 
-        ./scripts/packaging/render_homebrew_formula.sh \
-          --manifest dist/release-manifest.json \
-          --dist-dir dist \
-          --checksums-file dist/checksums.txt
+          ./scripts/packaging/render_homebrew_formula.sh \
+            --manifest dist/release-manifest.json \
+            --dist-dir dist \
+            --checksums-file dist/checksums.txt
 
-        pwsh -File ./scripts/packaging/build_choco_package.ps1 \
-          -ManifestPath dist/release-manifest.json \
-          -DistDir dist \
-          -ChecksumsFile dist/checksums.txt
+          pwsh -File ./scripts/packaging/build_choco_package.ps1 \
+            -ManifestPath dist/release-manifest.json \
+            -DistDir dist \
+            -ChecksumsFile dist/checksums.txt
 
-        ./scripts/packaging/verify_package_artifacts.sh \
-          --manifest dist/release-manifest.json \
-          --dist-dir dist \
-          --checksums-file dist/checksums.txt
+          ./scripts/packaging/verify_package_artifacts.sh \
+            --manifest dist/release-manifest.json \
+            --dist-dir dist \
+            --checksums-file dist/checksums.txt
+        )
+        cp -R publish-src/dist dist
 
     - name: Upload package artifacts
       uses: actions/upload-artifact@v4

@@ -144,9 +144,20 @@ else {
   }
   else {
     try {
-      & choco push $packageAbs --source $target --api-key $env:CHOCO_API_KEY --timeout 900 | Out-Null
+      $pushLog = New-Object System.Collections.Generic.List[string]
+      & choco push $packageAbs --source $target --api-key $env:CHOCO_API_KEY --timeout 900 2>&1 | ForEach-Object {
+        $line = $_.ToString()
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+          $pushLog.Add($line)
+          Write-Host $line
+        }
+      }
       if ($LASTEXITCODE -ne 0) {
-        throw "choco push exited with code $LASTEXITCODE"
+        $captured = ($pushLog -join "`n").Trim()
+        if ([string]::IsNullOrWhiteSpace($captured)) {
+          $captured = "(no choco output captured)"
+        }
+        throw "choco push exited with code $LASTEXITCODE. output: $captured"
       }
       $state = "published"
       $publishedAt = [DateTime]::UtcNow
