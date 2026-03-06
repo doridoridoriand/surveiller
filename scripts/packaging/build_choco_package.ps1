@@ -190,6 +190,8 @@ VERIFICATION
   }
 
   $packagePath = Join-Path $outputDirAbs "surveiller.$chocoVersion.nupkg"
+  Get-ChildItem -Path $outputDirAbs -Filter "surveiller.$chocoVersion*.nupkg" -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
   if (Get-Command choco -ErrorAction SilentlyContinue) {
     Push-Location $tmpRoot
     try {

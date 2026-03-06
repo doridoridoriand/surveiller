@@ -252,6 +252,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y apt-utils createrepo-c gpg
 
+    - name: Rebuild choco package (native pack)
+      if: steps.selector.outputs.enabled == 'true' && matrix.manager == 'choco'
+      shell: pwsh
+      run: |
+        ./scripts/packaging/build_choco_package.ps1 `
+          -ManifestPath "dist/release-manifest.json" `
+          -DistDir "dist" `
+          -ChecksumsFile "dist/checksums.txt"
+
     - name: Publish attempt 1 (bash managers)
       id: publish1_bash
       if: steps.selector.outputs.enabled == 'true' && matrix.manager != 'choco'
