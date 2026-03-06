@@ -185,6 +185,13 @@ jobs:
           - manager: choco
             runner: windows-latest
     runs-on: ${{ matrix.runner }}
+    env:
+      APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+      APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+      RPM_GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
+      RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
+      HOMEBREW_TAP_PUSH_TOKEN: ${{ secrets.HOMEBREW_TAP_PUSH_TOKEN }}
+      CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
     steps:
     - uses: actions/checkout@v4
 
