@@ -169,6 +169,7 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
+        REPO_OWNER="${GITHUB_REPOSITORY%%/*}"
         cat > release_notes.md << EOF
         # surveiller ${VERSION}
         
@@ -191,6 +192,41 @@ jobs:
         fi)
         
         ## Installation
+
+        ### Package Managers
+
+        \`\`\`bash
+        # apt
+        sudo tee /etc/apt/sources.list.d/surveiller.list >/dev/null <<'APT'
+        deb [trusted=yes] <apt-repo-url> stable main
+        APT
+        sudo apt update
+        sudo apt install -y surveiller
+
+        # dnf
+        sudo tee /etc/yum.repos.d/surveiller.repo >/dev/null <<'DNF'
+        [surveiller]
+        name=surveiller
+        baseurl=<dnf-repo-url>/packages
+        enabled=1
+        gpgcheck=0
+        repo_gpgcheck=0
+        DNF
+        sudo dnf makecache
+        sudo dnf install -y surveiller
+
+        # Homebrew
+        brew tap ${REPO_OWNER}/homebrew-tap
+        brew install ${REPO_OWNER}/homebrew-tap/surveiller
+        \`\`\`
+
+        \`\`\`powershell
+        # Chocolatey community feed
+        choco install surveiller -y
+
+        # or private feed
+        choco install surveiller -y --source="'<choco-feed-url>'"
+        \`\`\`
         
         ### Quick Install (Linux/macOS)
         

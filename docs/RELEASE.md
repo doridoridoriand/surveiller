@@ -106,6 +106,56 @@ The GitHub Actions workflow (`.github/workflows/release.yml`) handles:
 4. **Release Notes**: Creates installation instructions
 5. **Publishing**: Creates GitHub release with all artifacts
 
+## Package Publication Operations
+
+Package publication is handled by `.github/workflows/publish-packages.yml`.
+
+### Required Secrets
+
+- `APT_GPG_PRIVATE_KEY` (+ optional `APT_GPG_PASSPHRASE`)
+- `RPM_GPG_PRIVATE_KEY` (+ optional `RPM_GPG_PASSPHRASE`)
+- `HOMEBREW_TAP_PUSH_TOKEN`
+- `CHOCO_API_KEY`
+
+### Recommended Procedure
+
+1. Run package publication in dry-run mode:
+   - GitHub Actions -> `Publish Packages` -> `Run workflow`
+   - `dry_run=true`
+   - `managers=apt,dnf,brew,choco`
+2. Verify `publication-status-summary` artifacts:
+   - `summary.json`
+   - `summary.md`
+3. Run live publication:
+   - Re-run workflow with `dry_run=false`
+4. Verify package install smoke matrix:
+   - Run `.github/workflows/package-install-smoke.yml`
+   - Confirm all jobs pass (`apt`, `dnf`, `brew`, `choco`)
+
+### Homebrew/Chocolatey Targets
+
+- Homebrew tap target is controlled by:
+  - `HOMEBREW_TAP_REPO` (e.g. `owner/homebrew-tap`)
+  - `HOMEBREW_TAP_PUSH` (`true` to push after formula commit)
+- Chocolatey source target is controlled by:
+  - `CHOCO_SOURCE_URL` (default: `https://push.chocolatey.org/`)
+
+### Local Verification Commands
+
+```bash
+# Linux package publication checks
+./scripts/packaging/publish_apt_repo.sh --version v0.0.1 --dry-run true
+./scripts/packaging/publish_dnf_repo.sh --version v0.0.1 --dry-run true
+
+# Homebrew publication check
+./scripts/packaging/publish_homebrew_tap.sh --version v0.0.1 --dry-run true
+```
+
+```powershell
+# Chocolatey publication check
+pwsh -File ./scripts/packaging/publish_choco_package.ps1 -Version v0.0.1 -DryRun true
+```
+
 ## Pre-release Testing
 
 Before creating a release:

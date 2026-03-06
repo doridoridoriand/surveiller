@@ -39,6 +39,53 @@ Download the latest release from the [releases page](https://github.com/doridori
 
 **Note**: macOS and Windows builds are provided as experimental releases. While basic functionality has been verified, these platforms are not part of our continuous testing pipeline. Community feedback and contributions for platform-specific issues are welcome.
 
+### Package Manager Installation
+
+Package-manager distribution is supported for `apt`, `dnf`, `brew`, and `choco`.
+Replace placeholder values with your published repository/tap/feed endpoints.
+
+#### APT (Debian/Ubuntu)
+
+```bash
+sudo tee /etc/apt/sources.list.d/surveiller.list >/dev/null <<'EOF'
+deb [trusted=yes] <apt-repo-url> stable main
+EOF
+sudo apt update
+sudo apt install -y surveiller
+```
+
+#### DNF (Fedora/RHEL family)
+
+```bash
+sudo tee /etc/yum.repos.d/surveiller.repo >/dev/null <<'EOF'
+[surveiller]
+name=surveiller
+baseurl=<dnf-repo-url>/packages
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+EOF
+sudo dnf makecache
+sudo dnf install -y surveiller
+```
+
+#### Homebrew (macOS/Linux)
+
+```bash
+brew tap <owner>/homebrew-tap
+brew install <owner>/homebrew-tap/surveiller
+```
+
+#### Chocolatey (Windows)
+
+```powershell
+# Chocolatey community feed
+choco install surveiller -y
+
+# or private feed
+choco install surveiller -y --source="'<choco-feed-url>'"
+```
+
 ### Build from Source
 
 ```bash

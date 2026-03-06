@@ -67,14 +67,14 @@ Story goal:
 Independent test criteria:
 install smoke test workflow が Ubuntu/Fedora/macOS/Windows の各ジョブで `surveiller -version` を成功させること。README と Release notes に4マネージャの install コマンドが記載されること。
 
-- [ ] T025 [US3] Create install smoke-test matrix workflow in `.github/workflows/package-install-smoke.yml`
-- [ ] T026 [P] [US3] Add apt smoke test script in `scripts/packaging/ci/smoke_apt.sh`
-- [ ] T027 [P] [US3] Add dnf smoke test script in `scripts/packaging/ci/smoke_dnf.sh`
-- [ ] T028 [P] [US3] Add brew smoke test script in `scripts/packaging/ci/smoke_brew.sh`
-- [ ] T029 [P] [US3] Add choco smoke test script in `scripts/packaging/ci/smoke_choco.ps1`
-- [ ] T030 [US3] Add package-manager installation section in `README.md`
-- [ ] T031 [US3] Add package publication operation guide in `docs/RELEASE.md`
-- [ ] T032 [US3] Update release notes generation block in `.github/workflows/release.yml`
+- [x] T025 [US3] Create install smoke-test matrix workflow in `.github/workflows/package-install-smoke.yml`
+- [x] T026 [P] [US3] Add apt smoke test script in `scripts/packaging/ci/smoke_apt.sh`
+- [x] T027 [P] [US3] Add dnf smoke test script in `scripts/packaging/ci/smoke_dnf.sh`
+- [x] T028 [P] [US3] Add brew smoke test script in `scripts/packaging/ci/smoke_brew.sh`
+- [x] T029 [P] [US3] Add choco smoke test script in `scripts/packaging/ci/smoke_choco.ps1`
+- [x] T030 [US3] Add package-manager installation section in `README.md`
+- [x] T031 [US3] Add package publication operation guide in `docs/RELEASE.md`
+- [x] T032 [US3] Update release notes generation block in `.github/workflows/release.yml`
 
 ## Final Phase: Polish & Cross-Cutting
 
