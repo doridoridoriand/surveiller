@@ -1,0 +1,195 @@
+name: Package Install Smoke
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to validate (e.g., v1.2.3). Empty = latest tag.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build-package-artifacts:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Resolve smoke version
+      id: meta
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          version="${{ inputs.version }}"
+          if [ -z "${version}" ]; then
+            version="$(git describe --tags --abbrev=0 2>/dev/null || echo "")"
+          fi
+        else
+          version="${GITHUB_REF#refs/tags/}"
+        fi
+
+        if [ -z "${version}" ]; then
+          echo "Could not resolve release version." >&2
+          exit 1
+        fi
+
+        artifact_name="package-install-smoke-dist-${version}"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "artifact_name=${artifact_name}" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout smoke version
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.meta.outputs.version }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.11'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Install packaging tools
+      run: |
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+        go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.1
+        nfpm --version
+        pwsh --version
+
+    - name: Build package artifacts for smoke tests
+      run: |
+        chmod +x scripts/packaging/ci/smoke_us1.sh
+        scripts/packaging/ci/smoke_us1.sh \
+          --version "${{ steps.meta.outputs.version }}" \
+          --dist-dir dist
+
+    - name: Upload smoke artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.meta.outputs.artifact_name }}
+        path: dist/
+
+  install-smoke:
+    needs: build-package-artifacts
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - manager: apt
+            runner: ubuntu-latest
+            label: ubuntu
+          - manager: dnf
+            runner: ubuntu-latest
+            label: fedora
+          - manager: brew
+            runner: macos-latest
+            label: macos
+          - manager: choco
+            runner: windows-latest
+            label: windows
+    runs-on: ${{ matrix.runner }}
+    name: install-smoke-${{ matrix.label }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download smoke artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ needs.build-package-artifacts.outputs.artifact_name }}
+        path: dist
+
+    - name: Normalize artifact layout (unix)
+      if: matrix.manager != 'choco'
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -f dist/dist/release-manifest.json ] && [ ! -f dist/release-manifest.json ]; then
+          cp -R dist/dist/. dist/
+          find dist/dist -mindepth 1 -delete
+          rmdir dist/dist
+        fi
+
+    - name: Normalize artifact layout (windows)
+      if: matrix.manager == 'choco'
+      shell: pwsh
+      run: |
+        if ((Test-Path "dist/dist/release-manifest.json") -and (-not (Test-Path "dist/release-manifest.json"))) {
+          Copy-Item -Path "dist/dist/*" -Destination "dist" -Recurse -Force
+          Remove-Item -Path "dist/dist" -Recurse -Force
+        }
+
+    - name: Run apt install smoke test
+      if: matrix.manager == 'apt'
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y apt-utils gpg
+        chmod +x scripts/packaging/ci/smoke_apt.sh scripts/packaging/publish_apt_repo.sh
+        scripts/packaging/ci/smoke_apt.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist
+
+    - name: Run dnf install smoke test
+      if: matrix.manager == 'dnf'
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker run --rm \
+          -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+          -w "${GITHUB_WORKSPACE}" \
+          fedora:41 \
+          bash -lc '
+            set -euo pipefail
+            dnf -y install git jq sudo createrepo_c gnupg2
+            chmod +x scripts/packaging/ci/smoke_dnf.sh scripts/packaging/publish_dnf_repo.sh
+            scripts/packaging/ci/smoke_dnf.sh \
+              --manifest dist/release-manifest.json \
+              --dist-dir dist
+          '
+
+    - name: Run brew install smoke test
+      if: matrix.manager == 'brew'
+      shell: bash
+      run: |
+        set -euo pipefail
+        brew list jq >/dev/null 2>&1 || brew install jq
+        chmod +x \
+          scripts/packaging/ci/smoke_brew.sh \
+          scripts/packaging/generate_release_manifest.sh \
+          scripts/packaging/render_homebrew_formula.sh \
+          scripts/packaging/normalize_version.sh
+        scripts/packaging/ci/smoke_brew.sh \
+          --manifest dist/release-manifest.json \
+          --dist-dir dist
+
+    - name: Run choco install smoke test
+      if: matrix.manager == 'choco'
+      shell: pwsh
+      run: |
+        ./scripts/packaging/ci/smoke_choco.ps1 `
+          -ManifestPath "dist/release-manifest.json" `
+          -DistDir "dist"
+
