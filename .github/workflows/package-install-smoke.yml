@@ -49,11 +49,20 @@ jobs:
         echo "version=${version}" >> "$GITHUB_OUTPUT"
         echo "artifact_name=${artifact_name}" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout smoke version
+    - name: Checkout smoke source
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ steps.meta.outputs.version }}
+        path: smoke-src
+
+    - name: Inject packaging tooling into smoke source
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p smoke-src/scripts smoke-src/packaging
+        rsync -a --delete scripts/packaging/ smoke-src/scripts/packaging/
+        rsync -a --delete packaging/ smoke-src/packaging/
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -64,11 +73,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('smoke-src/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Install dependencies
+      working-directory: smoke-src
       run: go mod download
 
     - name: Install packaging tools
@@ -80,10 +90,16 @@ jobs:
 
     - name: Build package artifacts for smoke tests
       run: |
-        chmod +x scripts/packaging/ci/smoke_us1.sh
-        scripts/packaging/ci/smoke_us1.sh \
-          --version "${{ steps.meta.outputs.version }}" \
-          --dist-dir dist
+        set -euo pipefail
+        rm -rf dist
+        chmod +x smoke-src/scripts/packaging/ci/smoke_us1.sh
+        (
+          cd smoke-src
+          scripts/packaging/ci/smoke_us1.sh \
+            --version "${{ steps.meta.outputs.version }}" \
+            --dist-dir dist
+        )
+        cp -R smoke-src/dist dist
 
     - name: Upload smoke artifacts
       uses: actions/upload-artifact@v4
@@ -192,4 +208,3 @@ jobs:
         ./scripts/packaging/ci/smoke_choco.ps1 `
           -ManifestPath "dist/release-manifest.json" `
           -DistDir "dist"
-
