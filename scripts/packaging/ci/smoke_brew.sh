@@ -156,8 +156,12 @@ main() {
   )
 
   cleanup() {
-    brew uninstall --ignore-dependencies --force "${package_name}" >/dev/null 2>&1 || true
-    brew untap "${tap_name}" >/dev/null 2>&1 || true
+    if [ -n "${package_name:-}" ]; then
+      brew uninstall --ignore-dependencies --force "${package_name}" >/dev/null 2>&1 || true
+    fi
+    if [ -n "${tap_name:-}" ]; then
+      brew untap "${tap_name}" >/dev/null 2>&1 || true
+    fi
   }
   trap cleanup EXIT
 

@@ -37,10 +37,10 @@ main() {
   local repo_root version manifest_path dist_dir repo_dir status_file dry_run attempt
   local manifest_abs dist_abs repo_abs status_abs apt_version
   local state published_at error_message artifact_count
-  local deb_files pool_dir dists_dir list_file
+  local deb_files pool_dir pool_rel_dir dists_dir list_file
 
   repo_root="$(packaging_repo_root)"
-  version="${VERSION:-$(packaging_default_version)}"
+  version="${VERSION:-}"
   manifest_path="dist/release-manifest.json"
   dist_dir="dist"
   repo_dir=""
@@ -88,6 +88,10 @@ main() {
     esac
   done
 
+  if [ -z "${version}" ]; then
+    version="$(packaging_default_version)"
+  fi
+
   if [ -z "${repo_dir}" ]; then
     repo_dir="${dist_dir}/published/apt"
   fi
@@ -123,7 +127,8 @@ main() {
     set +e
     (
       set -e
-      pool_dir="${repo_abs}/pool/main/s/surveiller"
+      pool_rel_dir="pool/main/s/surveiller"
+      pool_dir="${repo_abs}/${pool_rel_dir}"
       dists_dir="${repo_abs}/dists/stable/main"
       mkdir -p "${pool_dir}" "${dists_dir}"
 
@@ -134,7 +139,10 @@ main() {
       if command -v apt-ftparchive >/dev/null 2>&1; then
         for arch in amd64 arm64; do
           mkdir -p "${dists_dir}/binary-${arch}"
-          apt-ftparchive packages "${pool_dir}" \
+          (
+            cd "${repo_abs}"
+            apt-ftparchive packages "${pool_rel_dir}"
+          ) \
             | awk -v arch="${arch}" '
                 BEGIN {
                   RS=""

@@ -123,7 +123,9 @@ main() {
   baseurl="file://${repo_abs}/packages"
 
   cleanup() {
-    run_as_root rm -f "${repo_file}" || true
+    if [ -n "${repo_file:-}" ]; then
+      run_as_root rm -f "${repo_file}" || true
+    fi
   }
   trap cleanup EXIT
 
@@ -145,4 +147,3 @@ main() {
 }
 
 main "$@"
-

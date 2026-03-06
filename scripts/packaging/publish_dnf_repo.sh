@@ -40,7 +40,7 @@ main() {
   local rpm_files packages_dir
 
   repo_root="$(packaging_repo_root)"
-  version="${VERSION:-$(packaging_default_version)}"
+  version="${VERSION:-}"
   manifest_path="dist/release-manifest.json"
   dist_dir="dist"
   repo_dir=""
@@ -87,6 +87,10 @@ main() {
         ;;
     esac
   done
+
+  if [ -z "${version}" ]; then
+    version="$(packaging_default_version)"
+  fi
 
   if [ -z "${repo_dir}" ]; then
     repo_dir="${dist_dir}/published/dnf"

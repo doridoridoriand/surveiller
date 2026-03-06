@@ -121,7 +121,9 @@ main() {
 
   source_list="/etc/apt/sources.list.d/surveiller-smoke.list"
   cleanup() {
-    run_as_root rm -f "${source_list}" || true
+    if [ -n "${source_list:-}" ]; then
+      run_as_root rm -f "${source_list}" || true
+    fi
   }
   trap cleanup EXIT
 
@@ -135,4 +137,3 @@ main() {
 }
 
 main "$@"
-

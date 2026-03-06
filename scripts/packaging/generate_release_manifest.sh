@@ -55,7 +55,7 @@ main() {
   local schema_path output_path release_base_url
   local normalize_script
 
-  version="${VERSION:-$(packaging_default_version)}"
+  version="${VERSION:-}"
   if [[ "${version}" != v* ]]; then
     version="v${version}"
   fi
@@ -115,6 +115,10 @@ main() {
         ;;
     esac
   done
+
+  if [ -z "${version}" ]; then
+    version="$(packaging_default_version)"
+  fi
 
   if [[ "${version}" != v* ]]; then
     version="v${version}"

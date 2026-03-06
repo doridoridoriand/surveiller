@@ -61,7 +61,7 @@ main() {
   local state published_at error_message artifact_count target
 
   repo_root="$(packaging_repo_root)"
-  version="${VERSION:-$(packaging_default_version)}"
+  version="${VERSION:-}"
   dist_dir="dist"
   formula_path=""
   tap_path="${HOMEBREW_TAP_PATH:-}"
@@ -110,6 +110,10 @@ main() {
         ;;
     esac
   done
+
+  if [ -z "${version}" ]; then
+    version="$(packaging_default_version)"
+  fi
 
   if [ -z "${formula_path}" ]; then
     formula_path="${dist_dir}/packages/homebrew/surveiller.rb"
