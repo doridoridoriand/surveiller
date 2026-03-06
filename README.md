@@ -42,38 +42,37 @@ Download the latest release from the [releases page](https://github.com/doridori
 ### Package Manager Installation
 
 Package-manager distribution is supported for `apt`, `dnf`, `brew`, and `choco`.
-Replace placeholder values with your published repository/tap/feed endpoints.
 
 #### APT (Debian/Ubuntu)
 
 ```bash
-sudo tee /etc/apt/sources.list.d/surveiller.list >/dev/null <<'EOF'
-deb [trusted=yes] <apt-repo-url> stable main
-EOF
-sudo apt update
-sudo apt install -y surveiller
+VERSION="v0.0.11"
+VERSION_NO_V="${VERSION#v}"
+ARCH="$(dpkg --print-architecture)"
+DEB_FILE="surveiller_${VERSION_NO_V}_${ARCH}.deb"
+curl -fsSL -o "/tmp/${DEB_FILE}" \
+  "https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/${DEB_FILE}"
+sudo apt install -y "/tmp/${DEB_FILE}"
 ```
 
 #### DNF (Fedora/RHEL family)
 
 ```bash
-sudo tee /etc/yum.repos.d/surveiller.repo >/dev/null <<'EOF'
-[surveiller]
-name=surveiller
-baseurl=<dnf-repo-url>/packages
-enabled=1
-gpgcheck=0
-repo_gpgcheck=0
-EOF
-sudo dnf makecache
-sudo dnf install -y surveiller
+VERSION="v0.0.11"
+VERSION_NO_V="${VERSION#v}"
+ARCH="$(uname -m)" # x86_64 or aarch64
+RPM_FILE="surveiller-${VERSION_NO_V}-1.${ARCH}.rpm"
+curl -fsSL -o "/tmp/${RPM_FILE}" \
+  "https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/${RPM_FILE}"
+sudo dnf install -y "/tmp/${RPM_FILE}"
 ```
 
 #### Homebrew (macOS/Linux)
 
 ```bash
-brew tap <owner>/homebrew-tap
-brew install <owner>/homebrew-tap/surveiller
+VERSION="v0.0.11"
+brew install \
+  "https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/surveiller.rb"
 ```
 
 #### Chocolatey (Windows)
@@ -83,27 +82,27 @@ brew install <owner>/homebrew-tap/surveiller
 choco install surveiller -y
 
 # or private feed
-choco install surveiller -y --source="'<choco-feed-url>'"
+choco install surveiller -y --source="'https://community.chocolatey.org/api/v2/'"
 ```
 
 ### Package Manager Troubleshooting
 
 - General checks:
   - Confirm package name is `surveiller`.
-  - Confirm the configured source URL/tap/feed points to your published endpoint.
+  - Confirm `VERSION` matches an existing GitHub release tag.
   - After install, verify with `surveiller -version`.
 - APT:
-  - If metadata is stale, run `sudo apt clean && sudo apt update`.
-  - If you see signing errors (`NO_PUBKEY`, `InRelease` verification issues), verify repository key configuration and key rotation state.
-  - If package download path is wrong, verify your APT source entry points to the repository root (the path that contains `dists/`).
+  - If install fails with dependency errors, run `sudo apt update` and retry.
+  - Ensure `ARCH` is either `amd64` or `arm64`.
+  - Ensure the `.deb` URL exists for your selected `VERSION`.
 - DNF:
-  - Refresh metadata with `sudo dnf clean all && sudo dnf makecache --refresh`.
-  - If GPG or `repomd.xml` validation fails, verify repository key and signature files.
-  - Ensure your `.repo` file `baseurl` ends with `/packages`.
+  - Ensure `ARCH` is either `x86_64` or `aarch64`.
+  - If install fails with dependency errors, run `sudo dnf clean all && sudo dnf makecache --refresh`.
+  - Ensure the `.rpm` URL exists for your selected `VERSION`.
 - Homebrew:
-  - If formula is not found, run `brew tap <owner>/homebrew-tap`.
+  - If formula URL returns 404, verify the release exists and includes `surveiller.rb`.
   - If checksum mismatch occurs, run `brew update` and retry install.
-  - If an old formula is cached, run `brew uninstall surveiller` then install again from tap.
+  - If an old formula is cached, run `brew uninstall surveiller` then install again.
 - Chocolatey:
   - If package is not found in private feeds, verify source configuration with `choco source list`.
   - If authentication fails, verify API key and source URL.
