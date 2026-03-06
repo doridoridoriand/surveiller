@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-03-06
+
+### Added
+- Multi-package distribution support for `apt`, `dnf`, `brew`, and `choco`
+  - Add packaging scaffold, templates, and metadata schema
+  - Add release manifest generation and version normalization tooling
+  - Add package build/verification scripts for Linux packages, Homebrew formula, and Chocolatey package
+- Package publication automation workflow (`.github/workflows/publish-packages.yml`)
+  - Manager selection (`apt,dnf,brew,choco`)
+  - Dry-run/live publish mode
+  - Retry-once behavior and per-manager publication status artifacts
+- Install smoke-test workflow (`.github/workflows/package-install-smoke.yml`)
+  - Matrix validation on Ubuntu/Fedora/macOS/Windows
+  - Verifies package install and `surveiller -version` for each manager
+- New package operations runbook for publication rollback and recovery
+
+### Changed
+- Release workflow now builds package artifacts in addition to binaries
+- Release workflow now generates package-aware release notes and installation instructions
+- README and release docs now include package-manager installation and operation guidance
+
+### Fixed
+- Wire package publication secrets correctly in CI
+- Relax DEB version check to support nfpm release suffixes
+- Fix PowerShell interpolation issue in Chocolatey package build script
+- Improve release workflow reliability (retry flaky test and fix Linux binary check in test-release)
+- Fix package install smoke execution for tagged releases and cross-runner path/layout differences
+- Fix packaging scripts for strict-shell cleanup handling and stable version resolution from manifest
+- Fix APT repository metadata generation to produce installable package paths
+
+### Documentation
+- Add signing key rotation checklist for APT/RPM in release operations doc
+- Add package-manager troubleshooting section in README
+- Add final verification checklist in package-manager quickstart
+
 ## [0.0.10] - 2026-02-13
 
 ### Added
