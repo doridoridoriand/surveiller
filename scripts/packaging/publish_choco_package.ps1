@@ -56,6 +56,16 @@ function Write-Status {
     [string]$ErrorMessage
   )
 
+  $publishedAtIso = $null
+  if ($null -ne $PublishedAt) {
+    try {
+      $publishedAtIso = ([DateTime]$PublishedAt).ToUniversalTime().ToString("o")
+    }
+    catch {
+      $publishedAtIso = $null
+    }
+  }
+
   $statusObject = [ordered]@{
     manager = $Manager
     version = $ReleaseVersion
@@ -63,7 +73,7 @@ function Write-Status {
     repository_target = $Target
     attempt = $AttemptNumber
     artifact_count = $ArtifactCount
-    published_at = if ($null -eq $PublishedAt) { $null } else { $PublishedAt.Value.ToUniversalTime().ToString("o") }
+    published_at = $publishedAtIso
     error_message = if ([string]::IsNullOrWhiteSpace($ErrorMessage)) { $null } else { $ErrorMessage }
   }
 
