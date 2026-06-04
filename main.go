@@ -25,6 +25,38 @@ import (
 
 var version = "0.0.2"
 
+func parseTrailingArgs(args []string, flagLogFile *cli.OptionalString) (string, error) {
+	// Handle flags that appear after the config file argument.
+	// Go's flag package stops parsing at the first non-flag argument,
+	// so we need to manually process remaining flags.
+	var configPath string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--log-file" || arg == "-log-file":
+			if i+1 >= len(args) {
+				return "", fmt.Errorf("missing value for --log-file")
+			}
+			if err := flagLogFile.Set(args[i+1]); err != nil {
+				return "", fmt.Errorf("invalid log-file value: %w", err)
+			}
+			i++ // Skip the next argument as it's the flag value.
+		case strings.HasPrefix(arg, "--log-file="):
+			if err := flagLogFile.Set(strings.TrimPrefix(arg, "--log-file=")); err != nil {
+				return "", fmt.Errorf("invalid log-file value: %w", err)
+			}
+		case strings.HasPrefix(arg, "-log-file="):
+			if err := flagLogFile.Set(strings.TrimPrefix(arg, "-log-file=")); err != nil {
+				return "", fmt.Errorf("invalid log-file value: %w", err)
+			}
+		case !strings.HasPrefix(arg, "-") && configPath == "":
+			configPath = arg
+		}
+	}
+
+	return configPath, nil
+}
+
 func main() {
 	var (
 		flagInterval       cli.OptionalDuration
@@ -63,40 +95,10 @@ func main() {
 		return
 	}
 
-	args := flag.Args()
-	// Handle flags that appear after the config file argument
-	// Go's flag package stops parsing at the first non-flag argument,
-	// so we need to manually process remaining flags
-	var configPath string
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if arg == "--log-file" || arg == "-log-file" {
-			if i+1 < len(args) {
-				if err := flagLogFile.Set(args[i+1]); err != nil {
-					fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
-					os.Exit(1)
-				}
-				i++ // Skip the next argument as it's the flag value
-				continue
-			}
-			fmt.Fprintln(os.Stderr, "missing value for --log-file")
-			os.Exit(1)
-		} else if strings.HasPrefix(arg, "--log-file=") {
-			if err := flagLogFile.Set(strings.TrimPrefix(arg, "--log-file=")); err != nil {
-				fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
-				os.Exit(1)
-			}
-		} else if strings.HasPrefix(arg, "-log-file=") {
-			if err := flagLogFile.Set(strings.TrimPrefix(arg, "-log-file=")); err != nil {
-				fmt.Fprintf(os.Stderr, "invalid log-file value: %v\n", err)
-				os.Exit(1)
-			}
-		} else if !strings.HasPrefix(arg, "-") {
-			// This is a non-flag argument (config file)
-			if configPath == "" {
-				configPath = arg
-			}
-		}
+	configPath, err := parseTrailingArgs(flag.Args(), &flagLogFile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
 	if configPath == "" {
