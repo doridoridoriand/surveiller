@@ -216,6 +216,92 @@ func TestBuildOverrides_EmptyValues(t *testing.T) {
 	}
 }
 
+func TestParseTrailingArgs(t *testing.T) {
+	tests := []struct {
+		name           string
+		args           []string
+		wantConfigPath string
+		wantLogFile    string
+		wantLogFileSet bool
+		wantErr        string
+	}{
+		{
+			name:           "config only",
+			args:           []string{"surveiller.conf"},
+			wantConfigPath: "surveiller.conf",
+		},
+		{
+			name:           "log-file flag after config",
+			args:           []string{"surveiller.conf", "--log-file", "surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:           "log-file equals syntax after config",
+			args:           []string{"surveiller.conf", "--log-file=surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:    "missing log-file value after config",
+			args:    []string{"surveiller.conf", "--log-file"},
+			wantErr: "missing value for --log-file",
+		},
+		{
+			name:           "single-dash log-file after config",
+			args:           []string{"surveiller.conf", "-log-file", "surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:           "single-dash equals log-file after config",
+			args:           []string{"surveiller.conf", "-log-file=surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:    "missing single-dash log-file value after config",
+			args:    []string{"surveiller.conf", "-log-file"},
+			wantErr: "missing value for --log-file",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var flagLogFile cli.OptionalString
+			configPath, err := parseTrailingArgs(tt.args, &flagLogFile)
+
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error %q, got nil", tt.wantErr)
+				}
+				if err.Error() != tt.wantErr {
+					t.Fatalf("expected error %q, got %q", tt.wantErr, err.Error())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if configPath != tt.wantConfigPath {
+				t.Fatalf("expected config path %q, got %q", tt.wantConfigPath, configPath)
+			}
+			logFile, ok := flagLogFile.Value()
+			if ok != tt.wantLogFileSet {
+				t.Fatalf("expected log-file set=%v, got %v", tt.wantLogFileSet, ok)
+			}
+			if logFile != tt.wantLogFile {
+				t.Fatalf("expected log-file %q, got %q", tt.wantLogFile, logFile)
+			}
+		})
+	}
+}
+
 func TestSignalContext(t *testing.T) {
 	ctx, cancel := signalContext()
 	defer cancel()
