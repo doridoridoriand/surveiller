@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 )
 
@@ -26,6 +27,7 @@ var levelNames = map[Level]string{
 
 // Logger provides structured logging
 type Logger struct {
+	mu     sync.Mutex
 	level  Level
 	output io.Writer
 }
@@ -50,11 +52,15 @@ func NewLogger(level Level) *Logger {
 
 // SetOutput sets the output writer for the logger
 func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.output = w
 }
 
 // SetLevel sets the log level
 func (l *Logger) SetLevel(level Level) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.level = level
 }
 
@@ -63,9 +69,12 @@ func (l *Logger) log(level Level, message string, fields map[string]interface{})
 	if level < l.level {
 		return
 	}
+	l.mu.Lock()
 	if l.output == nil || l.output == io.Discard {
+		l.mu.Unlock()
 		return
 	}
+	defer l.mu.Unlock()
 
 	entry := LogEntry{
 		Timestamp: time.Now().Format(time.RFC3339),

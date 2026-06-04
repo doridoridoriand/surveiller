@@ -75,10 +75,10 @@ func pingArgs(addr string, timeout time.Duration) []string {
 			// macOS ping6 doesn't support -W option, timeout is handled by context
 			return []string{"-n", "-c", "1", addr}
 		}
-		timeoutMs := maxInt(100, int(timeout.Milliseconds()))
+		timeoutMs := max(100, int(timeout.Milliseconds()))
 		return []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutMs), addr}
 	default:
-		timeoutSec := maxInt(1, int(timeout.Seconds()+0.5))
+		timeoutSec := max(1, int(timeout.Seconds()+0.5))
 		return []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutSec), addr}
 	}
 }
@@ -93,11 +93,4 @@ func parseRTT(output []byte) time.Duration {
 		return 0
 	}
 	return time.Duration(value * float64(time.Millisecond))
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

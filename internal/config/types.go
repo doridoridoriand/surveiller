@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -20,6 +21,10 @@ func (e *ConfigError) Error() string {
 }
 
 func (e *ConfigError) Unwrap() error { return e.Err }
+
+func (e *ConfigError) Is(target error) bool {
+	return errors.Is(e.Err, target)
+}
 
 // MetricsMode describes the granularity of metrics (future use).
 type MetricsMode string
