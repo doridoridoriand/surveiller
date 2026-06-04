@@ -35,6 +35,14 @@ jobs:
     - name: Run tests
       run: make test
 
+    - name: Run tests with race detector
+      run: go test -race ./...
+
+    - name: Check test coverage
+      run: |
+        go test -coverprofile=coverage.out ./...
+        go tool cover -func=coverage.out | tail -1 | awk '{if ($3+0 < 50) exit 1}'
+
     - name: Run property-based tests
       run: make test-prop
 
@@ -51,6 +59,12 @@ jobs:
 
     - name: Run go vet
       run: go vet ./...
+
+    - name: Staticcheck
+      uses: dominikh/staticcheck-action@v1.3.1
+      with:
+        version: "2025.1"
+        install: "github.com/dominikh/go-tools/cmd/staticcheck@v0.6.0"
 
   build-matrix:
     runs-on: ubuntu-latest
@@ -75,13 +89,14 @@ jobs:
       env:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
+        VERSION: ${{ github.ref_name }}
       run: |
         mkdir -p dist
         EXT=""
         if [ "$GOOS" = "windows" ]; then
           EXT=".exe"
         fi
-        go build -ldflags="-s -w" -o "dist/surveiller-$GOOS-$GOARCH$EXT" .
+        go build -ldflags="-s -w -X main.version=$VERSION" -o "dist/surveiller-$GOOS-$GOARCH$EXT" .
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

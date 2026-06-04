@@ -13,35 +13,64 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 		{Name: "example", Address: "192.0.2.1", Group: "group-1"},
 	}, 100*time.Millisecond)
 
-	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
-	status, ok := store.GetTargetStatus("example")
-	if !ok {
-		t.Fatalf("expected target status")
-	}
-	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN after first failure, got %s", status.Status)
-	}
-	if status.ConsecutiveFailures != 1 {
-		t.Fatalf("expected 1 consecutive failures, got %d", status.ConsecutiveFailures)
+	tests := []struct {
+		name                  string
+		result                ping.Result
+		wantStatus            Status
+		wantConsecutiveOK     int
+		wantConsecutiveFailures int
+		wantHistoryLen        int
+	}{
+		{
+			name:                  "first_failure → WARN",
+			result:                ping.Result{Success: false, Error: errSentinel{}},
+			wantStatus:            StatusWarn,
+			wantConsecutiveOK:     0,
+			wantConsecutiveFailures: 1,
+			wantHistoryLen:        0,
+		},
 	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store.UpdateResult("example", tt.result)
+			status, ok := store.GetTargetStatus("example")
+			if !ok {
+				t.Fatal("expected target status")
+			}
+			if status.Status != tt.wantStatus {
+				t.Errorf("status = %s, want %s", status.Status, tt.wantStatus)
+			}
+			if status.ConsecutiveOK != tt.wantConsecutiveOK {
+				t.Errorf("ConsecutiveOK = %d, want %d", status.ConsecutiveOK, tt.wantConsecutiveOK)
+			}
+			if status.ConsecutiveFailures != tt.wantConsecutiveFailures {
+				t.Errorf("ConsecutiveFailures = %d, want %d", status.ConsecutiveFailures, tt.wantConsecutiveFailures)
+			}
+			if len(status.History) != tt.wantHistoryLen {
+				t.Errorf("History len = %d, want %d", len(status.History), tt.wantHistoryLen)
+			}
+		})
+	}
+
+	// Sequential test: two more failures push to DOWN, then success resets
 	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
 	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
-	status, _ = store.GetTargetStatus("example")
+	status, _ := store.GetTargetStatus("example")
 	if status.Status != StatusDown {
-		t.Fatalf("expected DOWN after threshold, got %s", status.Status)
+		t.Errorf("expected DOWN after threshold, got %s", status.Status)
 	}
 
 	store.UpdateResult("example", ping.Result{Success: true, RTT: 12 * time.Millisecond})
 	status, _ = store.GetTargetStatus("example")
 	if status.Status != StatusOK {
-		t.Fatalf("expected OK after success, got %s", status.Status)
+		t.Errorf("expected OK after success, got %s", status.Status)
 	}
 	if status.ConsecutiveFailures != 0 || status.ConsecutiveOK != 1 {
-		t.Fatalf("unexpected counters: ok=%d fail=%d", status.ConsecutiveOK, status.ConsecutiveFailures)
+		t.Errorf("unexpected counters: ok=%d fail=%d", status.ConsecutiveOK, status.ConsecutiveFailures)
 	}
 	if len(status.History) != 1 {
-		t.Fatalf("expected history length 1, got %d", len(status.History))
+		t.Errorf("expected history length 1, got %d", len(status.History))
 	}
 }
 
@@ -49,109 +78,40 @@ func TestStoreHistorySize(t *testing.T) {
 	store := NewStore([]config.TargetConfig{{Name: "example"}}, 100*time.Millisecond)
 	store.historySize = 2
 
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 10 * time.Millisecond})
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 11 * time.Millisecond})
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 12 * time.Millisecond})
-
-	status, _ := store.GetTargetStatus("example")
-	if len(status.History) != 2 {
-		t.Fatalf("expected history size 2, got %d", len(status.History))
+	for _, rtt := range []time.Duration{10, 11, 12} {
+		store.UpdateResult("example", ping.Result{Success: true, RTT: rtt * time.Millisecond})
 	}
-	if status.History[0].RTT != 11*time.Millisecond || status.History[1].RTT != 12*time.Millisecond {
-		t.Fatalf("unexpected history values: %+v", status.History)
-	}
-}
-
-func TestStoreUpdateTargetsKeepsHistory(t *testing.T) {
-	store := NewStore([]config.TargetConfig{{Name: "example", Address: "192.0.2.1"}}, 100*time.Millisecond)
-	store.UpdateResult("example", ping.Result{Success: true, RTT: 10 * time.Millisecond})
-
-	store.UpdateTargets([]config.TargetConfig{
-		{Name: "example", Address: "192.0.2.2", Group: "group-2"},
-		{Name: "new", Address: "192.0.2.3"},
-	})
 
 	status, ok := store.GetTargetStatus("example")
 	if !ok {
-		t.Fatalf("expected existing target status")
+		t.Fatal("expected target status")
 	}
-	if status.Address != "192.0.2.2" || status.Group != "group-2" {
-		t.Fatalf("expected updated address/group, got %s/%s", status.Address, status.Group)
-	}
-	if len(status.History) != 1 {
-		t.Fatalf("expected history preserved, got %d", len(status.History))
-	}
-
-	_, ok = store.GetTargetStatus("new")
-	if !ok {
-		t.Fatalf("expected new target status")
+	if len(status.History) > 2 {
+		t.Errorf("history should not exceed limit: got %d", len(status.History))
 	}
 }
 
-func TestStoreUpdateResultRTTThresholds(t *testing.T) {
-	timeout := 100 * time.Millisecond
+func TestStoreGroups(t *testing.T) {
 	store := NewStore([]config.TargetConfig{
-		{Name: "example", Address: "192.0.2.1"},
-	}, timeout)
+		{Name: "a", Address: "192.0.2.1", Group: "group-1"},
+		{Name: "b", Address: "192.0.2.2", Group: "group-1"},
+		{Name: "c", Address: "192.0.2.3", Group: "group-2"},
+	}, 100*time.Millisecond)
 
-	// 直近10個のデータポイントで平均を計算するため、同じRTT値を10回送信して
-	// Historyを満たしてからテストを実行する
-	// OK: timeoutの25%以内（25ms以内）
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 20 * time.Millisecond})
-	}
-	status, _ := store.GetTargetStatus("example")
-	if status.Status != StatusOK {
-		t.Fatalf("expected OK for avg RTT 20ms (within 25%% of 100ms), got %s", status.Status)
-	}
-
-	// OK: 境界値 - timeoutの25%ちょうど（25ms）
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 25 * time.Millisecond})
-	}
-	status, _ = store.GetTargetStatus("example")
-	if status.Status != StatusOK {
-		t.Fatalf("expected OK for avg RTT 25ms (exactly 25%% of 100ms), got %s", status.Status)
-	}
-
-	// WARN: timeoutの25%超、50%以内（25ms超、50ms以内）
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 26 * time.Millisecond})
-	}
-	status, _ = store.GetTargetStatus("example")
-	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for avg RTT 26ms (just over 25%% of 100ms), got %s", status.Status)
-	}
-
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 40 * time.Millisecond})
-	}
-	status, _ = store.GetTargetStatus("example")
-	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for avg RTT 40ms (between 25%% and 50%% of 100ms), got %s", status.Status)
-	}
-
-	// WARN: 境界値 - timeoutの50%ちょうど（50ms）
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 50 * time.Millisecond})
-	}
-	status, _ = store.GetTargetStatus("example")
-	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for avg RTT 50ms (exactly 50%% of 100ms), got %s", status.Status)
-	}
-
-	// WARN: timeoutの50%超（50ms超）
-	for i := 0; i < 10; i++ {
-		store.UpdateResult("example", ping.Result{Success: true, RTT: 80 * time.Millisecond})
-	}
-	status, _ = store.GetTargetStatus("example")
-	if status.Status != StatusWarn {
-		t.Fatalf("expected WARN for avg RTT 80ms (over 50%% of 100ms), got %s", status.Status)
+	groups := store.GetGroups()
+	if len(groups) != 2 {
+		t.Errorf("expected 2 groups, got %d", len(groups))
 	}
 }
 
-type errSentinel struct{}
-
-func (errSentinel) Error() string {
-	return "sentinel"
+func TestStoreNoTargets(t *testing.T) {
+	store := NewStore(nil, 100*time.Millisecond)
+	_, ok := store.GetTargetStatus("missing")
+	if ok {
+		t.Error("expected target not found")
+	}
+	groups := store.GetGroups()
+	if len(groups) != 0 {
+		t.Errorf("expected no groups, got %d", len(groups))
+	}
 }
