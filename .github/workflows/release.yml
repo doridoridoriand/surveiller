@@ -196,36 +196,33 @@ jobs:
         ### Package Managers
 
         \`\`\`bash
-        # apt
-        sudo tee /etc/apt/sources.list.d/surveiller.list >/dev/null <<'APT'
-        deb [trusted=yes] <apt-repo-url> stable main
-        APT
-        sudo apt update
-        sudo apt install -y surveiller
+        # apt (Debian/Ubuntu)
+        VERSION="${VERSION}"
+        VERSION_NO_V="\${VERSION#v}"
+        ARCH="\$(dpkg --print-architecture)"
+        DEB_FILE="surveiller_\${VERSION_NO_V}_\${ARCH}.deb"
+        curl -fsSL -o "/tmp/\${DEB_FILE}" "https://github.com/doridoridoriand/surveiller/releases/download/\${VERSION}/\${DEB_FILE}"
+        sudo apt install -y "/tmp/\${DEB_FILE}"
 
-        # dnf
-        sudo tee /etc/yum.repos.d/surveiller.repo >/dev/null <<'DNF'
-        [surveiller]
-        name=surveiller
-        baseurl=<dnf-repo-url>/packages
-        enabled=1
-        gpgcheck=0
-        repo_gpgcheck=0
-        DNF
-        sudo dnf makecache
-        sudo dnf install -y surveiller
+        # dnf (Fedora/RHEL family)
+        VERSION="${VERSION}"
+        VERSION_NO_V="\${VERSION#v}"
+        ARCH="\$(uname -m)" # x86_64 or aarch64
+        RPM_FILE="surveiller-\${VERSION_NO_V}-1.\${ARCH}.rpm"
+        curl -fsSL -o "/tmp/\${RPM_FILE}" "https://github.com/doridoridoriand/surveiller/releases/download/\${VERSION}/\${RPM_FILE}"
+        sudo dnf install -y "/tmp/\${RPM_FILE}"
 
-        # Homebrew
-        brew tap ${REPO_OWNER}/homebrew-tap
-        brew install ${REPO_OWNER}/homebrew-tap/surveiller
+        # Homebrew (macOS/Linux)
+        VERSION="${VERSION}"
+        brew install "https://github.com/doridoridoriand/surveiller/releases/download/\${VERSION}/surveiller.rb"
         \`\`\`
 
         \`\`\`powershell
         # Chocolatey community feed
         choco install surveiller -y
 
-        # or private feed
-        choco install surveiller -y --source="'<choco-feed-url>'"
+        # or explicit community feed
+        choco install surveiller -y --source="'https://community.chocolatey.org/api/v2/'"
         \`\`\`
         
         ### Quick Install (Linux/macOS)

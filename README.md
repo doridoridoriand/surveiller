@@ -46,7 +46,7 @@ Package-manager distribution is supported for `apt`, `dnf`, `brew`, and `choco`.
 #### APT (Debian/Ubuntu)
 
 ```bash
-VERSION="v0.0.11"
+VERSION="v0.0.12"
 VERSION_NO_V="${VERSION#v}"
 ARCH="$(dpkg --print-architecture)"
 DEB_FILE="surveiller_${VERSION_NO_V}_${ARCH}.deb"
@@ -58,7 +58,7 @@ sudo apt install -y "/tmp/${DEB_FILE}"
 #### DNF (Fedora/RHEL family)
 
 ```bash
-VERSION="v0.0.11"
+VERSION="v0.0.12"
 VERSION_NO_V="${VERSION#v}"
 ARCH="$(uname -m)" # x86_64 or aarch64
 RPM_FILE="surveiller-${VERSION_NO_V}-1.${ARCH}.rpm"
@@ -70,7 +70,7 @@ sudo dnf install -y "/tmp/${RPM_FILE}"
 #### Homebrew (macOS/Linux)
 
 ```bash
-VERSION="v0.0.11"
+VERSION="v0.0.12"
 brew install \
   "https://github.com/doridoridoriand/surveiller/releases/download/${VERSION}/surveiller.rb"
 ```
