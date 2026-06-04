@@ -249,6 +249,25 @@ func TestParseTrailingArgs(t *testing.T) {
 			args:    []string{"surveiller.conf", "--log-file"},
 			wantErr: "missing value for --log-file",
 		},
+		{
+			name:           "single-dash log-file after config",
+			args:           []string{"surveiller.conf", "-log-file", "surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:           "single-dash equals log-file after config",
+			args:           []string{"surveiller.conf", "-log-file=surveiller.log"},
+			wantConfigPath: "surveiller.conf",
+			wantLogFile:    "surveiller.log",
+			wantLogFileSet: true,
+		},
+		{
+			name:    "missing single-dash log-file value after config",
+			args:    []string{"surveiller.conf", "-log-file"},
+			wantErr: "missing value for --log-file",
+		},
 	}
 
 	for _, tt := range tests {

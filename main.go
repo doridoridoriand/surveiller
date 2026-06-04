@@ -98,6 +98,7 @@ func main() {
 	configPath, err := parseTrailingArgs(flag.Args(), &flagLogFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		flag.Usage()
 		os.Exit(1)
 	}
 
