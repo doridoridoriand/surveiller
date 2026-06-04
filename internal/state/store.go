@@ -51,7 +51,7 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 		target.LastRTT = result.RTT
 		target.LastSuccessAt = now
 		target.ConsecutiveOK++
-		target.ConsecutiveNG = 0
+		target.ConsecutiveFailures = 0
 		target.TotalSuccess++
 
 		// Historyに追加（判定前に追加して、直近のデータポイントを含める）
@@ -82,10 +82,10 @@ func (s *StoreImpl) UpdateResult(name string, result ping.Result) {
 	}
 
 	target.LastFailureAt = now
-	target.ConsecutiveNG++
+	target.ConsecutiveFailures++
 	target.ConsecutiveOK = 0
 	target.TotalFailure++
-	if target.ConsecutiveNG >= s.downThreshold {
+	if target.ConsecutiveFailures >= s.downThreshold {
 		target.Status = StatusDown
 	} else {
 		target.Status = StatusWarn

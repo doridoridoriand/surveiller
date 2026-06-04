@@ -21,8 +21,8 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	if status.Status != StatusWarn {
 		t.Fatalf("expected WARN after first failure, got %s", status.Status)
 	}
-	if status.ConsecutiveNG != 1 {
-		t.Fatalf("expected 1 consecutive NG, got %d", status.ConsecutiveNG)
+	if status.ConsecutiveFailures != 1 {
+		t.Fatalf("expected 1 consecutive failures, got %d", status.ConsecutiveFailures)
 	}
 
 	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
@@ -37,8 +37,8 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	if status.Status != StatusOK {
 		t.Fatalf("expected OK after success, got %s", status.Status)
 	}
-	if status.ConsecutiveNG != 0 || status.ConsecutiveOK != 1 {
-		t.Fatalf("unexpected counters: ok=%d ng=%d", status.ConsecutiveOK, status.ConsecutiveNG)
+	if status.ConsecutiveFailures != 0 || status.ConsecutiveOK != 1 {
+		t.Fatalf("unexpected counters: ok=%d fail=%d", status.ConsecutiveOK, status.ConsecutiveFailures)
 	}
 	if len(status.History) != 1 {
 		t.Fatalf("expected history length 1, got %d", len(status.History))

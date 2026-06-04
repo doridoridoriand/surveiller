@@ -46,7 +46,7 @@ func TestPropertyPingResultStateUpdate(t *testing.T) {
 			}
 
 			// Verify consecutive counters
-			if status.ConsecutiveOK != 10 || status.ConsecutiveNG != 0 {
+			if status.ConsecutiveOK != 10 || status.ConsecutiveFailures != 0 {
 				return false
 			}
 
@@ -95,7 +95,7 @@ func TestPropertyPingResultStateUpdate(t *testing.T) {
 			}
 
 			// Verify failure counters
-			if status.ConsecutiveNG != failureCount || status.ConsecutiveOK != 0 {
+			if status.ConsecutiveFailures != failureCount || status.ConsecutiveOK != 0 {
 				return false
 			}
 
@@ -140,7 +140,7 @@ func TestPropertyPingResultStateUpdate(t *testing.T) {
 			}
 
 			// Verify counters are reset
-			if status.ConsecutiveNG != 0 || status.ConsecutiveOK != 10 {
+			if status.ConsecutiveFailures != 0 || status.ConsecutiveOK != 10 {
 				return false
 			}
 

@@ -305,13 +305,13 @@ func runTextReporter(ctx context.Context, store state.Store) {
 			for _, target := range snapshot {
 				fmt.Fprintf(
 					os.Stdout,
-					"- %s (%s) status=%s rtt=%s ok=%d ng=%d\n",
+					"- %s (%s) status=%s rtt=%s ok=%d fail=%d\n",
 					target.Name,
 					target.Address,
 					target.Status,
 					target.LastRTT,
 					target.ConsecutiveOK,
-					target.ConsecutiveNG,
+					target.ConsecutiveFailures,
 				)
 			}
 		}

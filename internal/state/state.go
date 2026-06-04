@@ -31,9 +31,9 @@ type TargetStatus struct {
 	LastRTT       time.Duration
 	LastSuccessAt time.Time
 	LastFailureAt time.Time
-	ConsecutiveOK int
-	ConsecutiveNG int
-	TotalSuccess  int
+	ConsecutiveOK      int
+	ConsecutiveFailures int
+	TotalSuccess       int
 	TotalFailure  int
 	Status        Status
 	History       []RTTPoint
