@@ -23,9 +23,9 @@ Releases are automated using GitHub Actions. When a version tag is pushed, the C
 The script will:
 - Validate the version format
 - Check that you're on a clean working directory
-- Update the version in `main.go`
+- Fetch latest remote state and update local `main`
 - Run tests to ensure everything works
-- Commit the version change
+- Build and test the binary
 - Create and push the git tag
 - Trigger the automated release process
 
@@ -33,7 +33,7 @@ The script will:
 
 1. **Update version in main.go**
    ```go
-   const version = "0.0.1"  // Remove the 'v' prefix
+   var version = "0.0.1"  // Remove the 'v' prefix
    ```
 
 2. **Run tests**

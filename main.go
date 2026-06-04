@@ -23,7 +23,7 @@ import (
 	"github.com/doridoridoriand/surveiller/internal/ui"
 )
 
-var version = "0.0.2"
+var version = "0.0.12"
 
 func parseTrailingArgs(args []string, flagLogFile *cli.OptionalString) (string, error) {
 	// Handle flags that appear after the config file argument.

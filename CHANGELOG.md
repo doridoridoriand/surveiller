@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-06-04
+
+### Changed
+- Update GitHub Release package-manager instructions to use downloadable release assets.
+- Update README package-manager examples for the v0.0.12 release.
+- Correct release process documentation for the current release script behavior.
+
+### Fixed
+- Print usage when trailing `--log-file`/`-log-file` is missing a value after the config file argument.
+- Support and test single-dash trailing `-log-file` forms consistently.
+- Rebuild Chocolatey packages with native `choco pack` before publishing.
+- Capture Chocolatey push diagnostics and write successful publication status reliably.
+
 ## [0.0.11] - 2026-03-06
 
 ### Added
