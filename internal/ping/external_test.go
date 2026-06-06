@@ -12,16 +12,16 @@ import (
 
 func TestPingArgs(t *testing.T) {
 	timeout := 1500 * time.Millisecond
-	args := pingArgs("example.com", timeout)
+	args := pingArgsFor("192.0.2.1", timeout, false)
 
 	var expected []string
 	switch runtime.GOOS {
 	case "darwin":
 		timeoutMs := max(100, int(timeout.Milliseconds()))
-		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutMs), "example.com"}
+		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutMs), "192.0.2.1"}
 	default:
 		timeoutSec := max(1, int(timeout.Seconds()+0.5))
-		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutSec), "example.com"}
+		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutSec), "192.0.2.1"}
 	}
 
 	if !reflect.DeepEqual(args, expected) {
@@ -31,7 +31,7 @@ func TestPingArgs(t *testing.T) {
 
 func TestPingArgsMinimumTimeout(t *testing.T) {
 	timeout := 10 * time.Millisecond
-	args := pingArgs("example.com", timeout)
+	args := pingArgsFor("192.0.2.1", timeout, false)
 
 	var expectedTimeout string
 	switch runtime.GOOS {
@@ -58,6 +58,19 @@ func TestParseRTTInvalid(t *testing.T) {
 	output := []byte("no time here\n")
 	if rtt := parseRTT(output); rtt != 0 {
 		t.Fatalf("expected zero RTT for missing pattern, got %v", rtt)
+	}
+}
+
+func TestResultFromExternalPingRejectsMissingRTT(t *testing.T) {
+	result := resultFromExternalPing(context.Background(), []byte("1 packets transmitted, 1 received\n"), nil)
+	if result.Success {
+		t.Fatalf("expected success output without RTT to be treated as failure")
+	}
+	if result.Error == nil || !strings.Contains(result.Error.Error(), "RTT") {
+		t.Fatalf("expected RTT parse error, got %v", result.Error)
+	}
+	if result.RTT != 0 {
+		t.Fatalf("expected zero RTT on parse failure, got %v", result.RTT)
 	}
 }
 
@@ -179,7 +192,7 @@ func TestPingArgsVariousTimeouts(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		args := pingArgs(tc.addr, tc.timeout)
+		args := pingArgsFor(tc.addr, tc.timeout, false)
 
 		// Verify basic structure
 		if len(args) < 5 {
@@ -233,18 +246,10 @@ func TestIsIPv6(t *testing.T) {
 		{"::1", true},
 		{"2001:db8::1", true},
 		{"fe80::1", true},
-		{"localhost", false},   // Will resolve to IPv4 or IPv6 depending on system
-		{"example.com", false}, // Will resolve to IPv4 or IPv6 depending on system
 	}
 
 	for _, tc := range testCases {
 		result := isIPv6(tc.addr)
-		// For hostnames, we can't be certain, so we just check it doesn't panic
-		if tc.addr == "localhost" || tc.addr == "example.com" {
-			// Just verify it returns a boolean value without panicking
-			_ = result
-			continue
-		}
 		if result != tc.expected {
 			t.Fatalf("isIPv6(%q) = %v, expected %v", tc.addr, result, tc.expected)
 		}
@@ -267,7 +272,7 @@ func TestPingCommand(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		// On non-macOS systems, pingCommand should always return "ping"
 		for _, tc := range testCases {
-			result := pingCommand(tc.addr)
+			result := pingCommandFor(tc.expected == "ping6")
 			if result != "ping" {
 				t.Fatalf("pingCommand(%q) = %q, expected %q on non-macOS", tc.addr, result, "ping")
 			}
@@ -277,7 +282,7 @@ func TestPingCommand(t *testing.T) {
 
 	// On macOS, IPv6 addresses should use ping6
 	for _, tc := range testCases {
-		result := pingCommand(tc.addr)
+		result := pingCommandFor(tc.expected == "ping6")
 		if result != tc.expected {
 			t.Fatalf("pingCommand(%q) = %q, expected %q", tc.addr, result, tc.expected)
 		}
@@ -286,13 +291,13 @@ func TestPingCommand(t *testing.T) {
 
 func TestPingArgsIPv6(t *testing.T) {
 	timeout := 1500 * time.Millisecond
-	args := pingArgs("::1", timeout)
+	args := pingArgsFor("::1", timeout, true)
 
 	var expected []string
 	switch runtime.GOOS {
 	case "darwin":
-		// macOS ping6 doesn't support -W option, timeout is handled by context
-		expected = []string{"-n", "-c", "1", "::1"}
+		timeoutSec := max(1, int(timeout.Seconds()+0.5))
+		expected = []string{"-n", "-c", "1", "-t", strconv.Itoa(timeoutSec), "::1"}
 	default:
 		timeoutSec := max(1, int(timeout.Seconds()+0.5))
 		expected = []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutSec), "::1"}

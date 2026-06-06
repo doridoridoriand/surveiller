@@ -23,31 +23,36 @@ func NewExternalPinger() *ExternalPinger {
 
 // Ping runs the system ping command and parses the RTT from stdout.
 func (p *ExternalPinger) Ping(ctx context.Context, addr string, timeout time.Duration) Result {
-	args := pingArgs(addr, timeout)
-	cmdName := pingCommand(addr)
-	start := time.Now()
+	isIPv6Addr := resolveIPv6(ctx, addr)
+	args := pingArgsFor(addr, timeout, isIPv6Addr)
+	cmdName := pingCommandFor(isIPv6Addr)
 	cmd := exec.CommandContext(ctx, cmdName, args...)
 	out, err := cmd.CombinedOutput()
+	return resultFromExternalPing(ctx, out, err)
+}
+
+func resultFromExternalPing(ctx context.Context, output []byte, err error) Result {
 	if err != nil {
-		// Check if context was cancelled due to timeout
-		if ctx.Err() == context.DeadlineExceeded {
-			return Result{Success: false, Error: fmt.Errorf("ping timeout: %w", ctx.Err())}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			if ctxErr == context.DeadlineExceeded {
+				return Result{Success: false, Error: fmt.Errorf("ping timeout: %w", ctxErr)}
+			}
+			return Result{Success: false, Error: ctxErr}
 		}
 		return Result{Success: false, Error: fmt.Errorf("external ping failed: %w", err)}
 	}
 
-	rtt := parseRTT(out)
-	if rtt == 0 {
-		rtt = time.Since(start)
-		return Result{Success: true, RTT: rtt, Error: fmt.Errorf("RTT parse fallback: using wall clock as approximation")}
+	rtt, ok := parseRTTValue(output)
+	if !ok {
+		return Result{Success: false, Error: fmt.Errorf("external ping output did not contain RTT")}
 	}
 	return Result{Success: true, RTT: rtt}
 }
 
-// pingCommand returns the appropriate ping command name for the given address.
+// pingCommandFor returns the appropriate ping command name for an address family.
 // On macOS, IPv6 addresses require ping6 command.
-func pingCommand(addr string) string {
-	if runtime.GOOS == "darwin" && isIPv6(addr) {
+func pingCommandFor(isIPv6Addr bool) string {
+	if runtime.GOOS == "darwin" && isIPv6Addr {
 		return "ping6"
 	}
 	return "ping"
@@ -55,24 +60,26 @@ func pingCommand(addr string) string {
 
 // isIPv6 checks if the given address is an IPv6 address.
 func isIPv6(addr string) bool {
+	return resolveIPv6(context.Background(), addr)
+}
+
+func resolveIPv6(ctx context.Context, addr string) bool {
 	ip := net.ParseIP(addr)
 	if ip != nil {
 		return ip.To4() == nil
 	}
-	// Resolve with a limited resolver to avoid blocking on hung DNS
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	lookupCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	resolver := &net.Resolver{PreferGo: true}
-	ips, err := resolver.LookupIPAddr(ctx, addr)
+	ips, err := resolver.LookupIPAddr(lookupCtx, addr)
 	if err != nil || len(ips) == 0 {
 		return false
 	}
 	return ips[0].IP.To4() == nil
 }
 
-func pingArgs(addr string, timeout time.Duration) []string {
-	isIPv6Addr := isIPv6(addr)
-
+func pingArgsFor(addr string, timeout time.Duration, isIPv6Addr bool) []string {
 	switch runtime.GOOS {
 	case "darwin":
 		if isIPv6Addr {
@@ -89,13 +96,18 @@ func pingArgs(addr string, timeout time.Duration) []string {
 }
 
 func parseRTT(output []byte) time.Duration {
+	rtt, _ := parseRTTValue(output)
+	return rtt
+}
+
+func parseRTTValue(output []byte) (time.Duration, bool) {
 	matches := timePattern.FindSubmatch(output)
 	if len(matches) < 2 {
-		return 0
+		return 0, false
 	}
 	value, err := strconv.ParseFloat(string(matches[1]), 64)
 	if err != nil {
-		return 0
+		return 0, false
 	}
-	return time.Duration(value * float64(time.Millisecond))
+	return time.Duration(value * float64(time.Millisecond)), true
 }
