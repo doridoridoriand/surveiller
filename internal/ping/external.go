@@ -77,7 +77,7 @@ func pingArgs(addr string, timeout time.Duration) []string {
 	case "darwin":
 		if isIPv6Addr {
 			// macOS ping6 doesn't support -W but supports -t (per-packet timeout in seconds)
-			timeoutSec := maxInt(1, int(timeout.Seconds()+0.5))
+			timeoutSec := max(1, int(timeout.Seconds()+0.5))
 			return []string{"-n", "-c", "1", "-t", strconv.Itoa(timeoutSec), addr}
 		}
 		timeoutMs := max(100, int(timeout.Milliseconds()))

@@ -86,7 +86,7 @@ func TestPropertyPingResultStateUpdate(t *testing.T) {
 
 			// Send consecutive failures
 			for i := 0; i < failureCount; i++ {
-				store.UpdateResult("test", ping.Result{Success: false, Error: errSentinel{}})
+				store.UpdateResult("test", ping.Result{Success: false, Error: errSentinel})
 			}
 
 			status, ok := store.GetTargetStatus("test")
@@ -126,7 +126,7 @@ func TestPropertyPingResultStateUpdate(t *testing.T) {
 
 			// Send failures
 			for i := 0; i < failureCount; i++ {
-				store.UpdateResult("test", ping.Result{Success: false, Error: errSentinel{}})
+				store.UpdateResult("test", ping.Result{Success: false, Error: errSentinel})
 			}
 
 			// Send 10 successes to fill history
