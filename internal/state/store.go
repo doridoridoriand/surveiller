@@ -1,6 +1,7 @@
 package state
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -145,6 +146,26 @@ func (s *StoreImpl) GetTargetStatus(name string) (TargetStatus, bool) {
 		return TargetStatus{}, false
 	}
 	return copyTargetStatus(target), true
+}
+
+// GetGroups returns the unique group names sorted alphabetically, with empty group last.
+func (s *StoreImpl) GetGroups() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	groupSet := make(map[string]bool)
+	for _, target := range s.targets {
+		groupSet[target.Group] = true
+	}
+
+	groups := make([]string, 0, len(groupSet))
+	for g := range groupSet {
+		groups = append(groups, g)
+	}
+
+	// Sort alphabetically with empty group first (sort.Strings does this naturally)
+	sort.Strings(groups)
+	return groups
 }
 
 func (s *StoreImpl) appendHistory(target *TargetStatus, rtt time.Duration, at time.Time) {

@@ -1,12 +1,15 @@
 package state
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/doridoridoriand/surveiller/internal/config"
 	"github.com/doridoridoriand/surveiller/internal/ping"
 )
+
+var errSentinel = errors.New("sentinel error")
 
 func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	store := NewStore([]config.TargetConfig{
@@ -23,7 +26,7 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	}{
 		{
 			name:                  "first_failure → WARN",
-			result:                ping.Result{Success: false, Error: errSentinel{}},
+			result:                ping.Result{Success: false, Error: errSentinel},
 			wantStatus:            StatusWarn,
 			wantConsecutiveOK:     0,
 			wantConsecutiveFailures: 1,
@@ -54,8 +57,8 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	}
 
 	// Sequential test: two more failures push to DOWN, then success resets
-	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
-	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel{}})
+	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel})
+	store.UpdateResult("example", ping.Result{Success: false, Error: errSentinel})
 	status, _ := store.GetTargetStatus("example")
 	if status.Status != StatusDown {
 		t.Errorf("expected DOWN after threshold, got %s", status.Status)
