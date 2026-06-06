@@ -17,20 +17,20 @@ func TestStoreUpdateResultSuccessAndFailure(t *testing.T) {
 	}, 100*time.Millisecond)
 
 	tests := []struct {
-		name                  string
-		result                ping.Result
-		wantStatus            Status
-		wantConsecutiveOK     int
+		name                    string
+		result                  ping.Result
+		wantStatus              Status
+		wantConsecutiveOK       int
 		wantConsecutiveFailures int
-		wantHistoryLen        int
+		wantHistoryLen          int
 	}{
 		{
-			name:                  "first_failure → WARN",
-			result:                ping.Result{Success: false, Error: errSentinel},
-			wantStatus:            StatusWarn,
-			wantConsecutiveOK:     0,
+			name:                    "first_failure → WARN",
+			result:                  ping.Result{Success: false, Error: errSentinel},
+			wantStatus:              StatusWarn,
+			wantConsecutiveOK:       0,
 			wantConsecutiveFailures: 1,
-			wantHistoryLen:        0,
+			wantHistoryLen:          0,
 		},
 	}
 
