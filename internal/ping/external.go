@@ -39,6 +39,7 @@ func (p *ExternalPinger) Ping(ctx context.Context, addr string, timeout time.Dur
 	rtt := parseRTT(out)
 	if rtt == 0 {
 		rtt = time.Since(start)
+		return Result{Success: true, RTT: rtt, Error: fmt.Errorf("RTT parse fallback: using wall clock as approximation")}
 	}
 	return Result{Success: true, RTT: rtt}
 }
@@ -58,12 +59,15 @@ func isIPv6(addr string) bool {
 	if ip != nil {
 		return ip.To4() == nil
 	}
-	// If parsing fails, try to resolve it
-	ipAddr, err := net.ResolveIPAddr("ip", addr)
-	if err != nil {
+	// Resolve with a limited resolver to avoid blocking on hung DNS
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	resolver := &net.Resolver{PreferGo: true}
+	ips, err := resolver.LookupIPAddr(ctx, addr)
+	if err != nil || len(ips) == 0 {
 		return false
 	}
-	return ipAddr.IP != nil && ipAddr.IP.To4() == nil
+	return ips[0].IP.To4() == nil
 }
 
 func pingArgs(addr string, timeout time.Duration) []string {
@@ -72,8 +76,9 @@ func pingArgs(addr string, timeout time.Duration) []string {
 	switch runtime.GOOS {
 	case "darwin":
 		if isIPv6Addr {
-			// macOS ping6 doesn't support -W option, timeout is handled by context
-			return []string{"-n", "-c", "1", addr}
+			// macOS ping6 doesn't support -W but supports -t (per-packet timeout in seconds)
+			timeoutSec := maxInt(1, int(timeout.Seconds()+0.5))
+			return []string{"-n", "-c", "1", "-t", strconv.Itoa(timeoutSec), addr}
 		}
 		timeoutMs := max(100, int(timeout.Milliseconds()))
 		return []string{"-n", "-c", "1", "-W", strconv.Itoa(timeoutMs), addr}

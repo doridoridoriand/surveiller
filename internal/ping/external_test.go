@@ -88,11 +88,11 @@ func TestExternalPingerContextCancellation(t *testing.T) {
 func TestExternalPingerTimeout(t *testing.T) {
 	pinger := NewExternalPinger()
 
-	// Use a very short timeout to force timeout behavior
+	// Use a very short timeout with a non-routable address to force timeout behavior
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
-	result := pinger.Ping(ctx, "127.0.0.1", time.Second)
+	result := pinger.Ping(ctx, "192.0.2.1", time.Second)
 	if result.Success {
 		t.Fatalf("expected timeout failure")
 	}

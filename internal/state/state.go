@@ -25,18 +25,18 @@ type RTTPoint struct {
 
 // TargetStatus captures the current state and history for a target.
 type TargetStatus struct {
-	Name          string
-	Address       string
-	Group         string
-	LastRTT       time.Duration
-	LastSuccessAt time.Time
-	LastFailureAt time.Time
-	ConsecutiveOK int
-	ConsecutiveNG int
-	TotalSuccess  int
-	TotalFailure  int
-	Status        Status
-	History       []RTTPoint
+	Name                string
+	Address             string
+	Group               string
+	LastRTT             time.Duration
+	LastSuccessAt       time.Time
+	LastFailureAt       time.Time
+	ConsecutiveOK       int
+	ConsecutiveFailures int
+	TotalSuccess        int
+	TotalFailure        int
+	Status              Status
+	History             []RTTPoint
 }
 
 // Store defines operations for tracking target state.

@@ -84,7 +84,8 @@ func (s *Impl) Run(ctx context.Context) error {
 func (s *Impl) UpdateConfig(global config.GlobalOptions, targets []config.TargetConfig) {
 	s.mu.Lock()
 	s.cfg = global
-	s.semaphore = make(chan struct{}, maxConcurrency(global.MaxConcurrency))
+	// Do not replace semaphore — goroutines may be blocking on the old one.
+	// Capacity was set at creation and max-concurrency changes are rare.
 
 	updated := make(map[string]config.TargetConfig, len(targets))
 	for _, tgt := range targets {
@@ -135,7 +136,7 @@ func (s *Impl) UpdateConfig(global config.GlobalOptions, targets []config.Target
 	}
 }
 
-// Stop cancels all running target loops.
+// Stop cancels all running target loops and waits for them to finish.
 func (s *Impl) Stop() {
 	s.mu.Lock()
 	cancel := s.cancel
@@ -143,6 +144,7 @@ func (s *Impl) Stop() {
 	if cancel != nil {
 		cancel()
 	}
+	s.wg.Wait()
 }
 
 func (s *Impl) startTarget(ctx context.Context, target config.TargetConfig) {
