@@ -64,7 +64,6 @@ jobs:
       uses: dominikh/staticcheck-action@v1.3.1
       with:
         version: "2025.1"
-        install: "github.com/dominikh/go-tools/cmd/staticcheck@v0.6.0"
 
   build-matrix:
     runs-on: ubuntu-latest
