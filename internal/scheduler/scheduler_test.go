@@ -74,6 +74,38 @@ func TestSchedulerUpdateConfigStartsNewTarget(t *testing.T) {
 	recorder.waitFor(t, "192.0.2.2", 1, ctx)
 }
 
+func TestSchedulerCopiesTargetOptions(t *testing.T) {
+	initialOptions := map[string]string{"relay": "jump1"}
+	initial := []config.TargetConfig{{
+		Name:    "a",
+		Address: "192.0.2.1",
+		Options: initialOptions,
+	}}
+
+	s := NewScheduler(config.GlobalOptions{
+		Interval:       time.Second,
+		Timeout:        time.Second,
+		MaxConcurrency: 1,
+	}, initial, &recordingPinger{seen: make(map[string]int)}, state.NewStore(nil, time.Second), nil)
+
+	initialOptions["relay"] = "mutated"
+	if got := s.targets["a"].Options["relay"]; got != "jump1" {
+		t.Fatalf("scheduler shared initial target options map, got %q", got)
+	}
+
+	updatedOptions := map[string]string{"relay": "jump2"}
+	s.UpdateConfig(s.cfg, []config.TargetConfig{{
+		Name:    "a",
+		Address: "192.0.2.1",
+		Options: updatedOptions,
+	}})
+
+	updatedOptions["relay"] = "mutated-again"
+	if got := s.targets["a"].Options["relay"]; got != "jump2" {
+		t.Fatalf("scheduler shared updated target options map, got %q", got)
+	}
+}
+
 type blockingPinger struct {
 	inFlight int32
 	max      int32

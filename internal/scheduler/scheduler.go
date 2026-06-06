@@ -46,7 +46,8 @@ func NewScheduler(global config.GlobalOptions, targets []config.TargetConfig, pi
 		targetJobs: make(map[string]context.CancelFunc),
 	}
 	for _, tgt := range targets {
-		s.targets[tgt.Name] = tgt
+		copied := tgt.Copy()
+		s.targets[copied.Name] = copied
 	}
 	return s
 }
@@ -63,7 +64,7 @@ func (s *Impl) Run(ctx context.Context) error {
 	s.runCtx = runCtx
 	targets := make([]config.TargetConfig, 0, len(s.targets))
 	for _, tgt := range s.targets {
-		targets = append(targets, tgt)
+		targets = append(targets, tgt.Copy())
 	}
 	s.mu.Unlock()
 
@@ -89,7 +90,8 @@ func (s *Impl) UpdateConfig(global config.GlobalOptions, targets []config.Target
 
 	updated := make(map[string]config.TargetConfig, len(targets))
 	for _, tgt := range targets {
-		updated[tgt.Name] = tgt
+		copied := tgt.Copy()
+		updated[copied.Name] = copied
 	}
 
 	runCtx := s.runCtx

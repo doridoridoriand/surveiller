@@ -54,6 +54,18 @@ type TargetConfig struct {
 	Options map[string]string
 }
 
+// Copy returns a deep copy of the target configuration.
+func (t TargetConfig) Copy() TargetConfig {
+	copied := t
+	if t.Options != nil {
+		copied.Options = make(map[string]string, len(t.Options))
+		for key, value := range t.Options {
+			copied.Options[key] = value
+		}
+	}
+	return copied
+}
+
 // Config is the parsed configuration file with global settings.
 type Config struct {
 	Targets []TargetConfig
