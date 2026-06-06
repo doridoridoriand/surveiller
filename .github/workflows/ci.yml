@@ -60,6 +60,7 @@ jobs:
     - name: Run go vet
       run: go vet ./...
 
+    # Staticcheck: verify with latest stable release
     - name: Staticcheck
       uses: dominikh/staticcheck-action@v1.3.1
       with:
