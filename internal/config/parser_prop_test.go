@@ -222,12 +222,19 @@ func genConfigSpec() gopter.Gen {
 	return gopter.Gen(func(genParams *gopter.GenParameters) *gopter.GenResult {
 		groupCount := genParams.Rng.Intn(3) + 1
 		groups := make([][]targetSpec, groupCount)
+		usedNames := make(map[string]bool)
 		for i := 0; i < groupCount; i++ {
 			targetCount := genParams.Rng.Intn(3) + 1
 			group := make([]targetSpec, targetCount)
 			for j := 0; j < targetCount; j++ {
+				name := randomToken(genParams.Rng)
+				// Ensure unique names across all targets to avoid parser rejection
+				for usedNames[name] {
+					name = randomToken(genParams.Rng)
+				}
+				usedNames[name] = true
 				group[j] = targetSpec{
-					Name:    randomToken(genParams.Rng),
+					Name:    name,
 					Address: randomToken(genParams.Rng),
 				}
 			}
