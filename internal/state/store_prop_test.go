@@ -1,7 +1,6 @@
 package state
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/prop"
 )
-
-var errSentinel = errors.New("sentinel error")
 
 // **Feature: surveiller, Property 5: ping 結果の状態更新**
 // **Validates: Requirements 2.2, 2.3, 2.4**
