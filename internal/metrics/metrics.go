@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -100,6 +101,11 @@ func escapeLabel(value string) string {
 
 // Serve starts an HTTP server and blocks until context cancellation.
 func Serve(ctx context.Context, addr string, mode config.MetricsMode, store state.Store) error {
+	// Validate address early
+	if _, _, err := net.SplitHostPort(addr); err != nil {
+		return fmt.Errorf("invalid metrics listen address %q: %w", addr, err)
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", NewServer(mode, store).Handler())
 	server := &http.Server{

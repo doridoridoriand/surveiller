@@ -122,6 +122,7 @@ func main() {
 			os.Exit(1)
 		}
 		logger.SetOutput(logFile)
+		defer logFile.Close()
 	}
 
 	overrides := buildOverrides(flagInterval, flagTimeout, flagMaxConcurrency, flagMetricsMode, flagMetricsListen, flagNoUI)
@@ -272,7 +273,11 @@ func signalContext() (context.Context, context.CancelFunc) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-ch
+		defer signal.Stop(ch)
+		select {
+		case <-ch:
+		case <-ctx.Done():
+		}
 		cancel()
 	}()
 	return ctx, cancel

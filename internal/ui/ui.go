@@ -191,8 +191,8 @@ func (u *UI) drawGroupBox(screen tcell.Screen, x, y, width, height int, group ta
 
 func (u *UI) formatTargetLine(width int, target state.TargetStatus) []styledRune {
 	statusStyle := statusStyle(target.Status)
-	name := padOrTrim(target.Name, minInt(14, width))
-	addr := padOrTrim(target.Address, minInt(18, width))
+	name := padOrTrim(target.Name, min(14, width))
+	addr := padOrTrim(target.Address, min(18, width))
 	status := padOrTrim(string(target.Status), 6)
 
 	rtt := padOrTrim(fmt.Sprintf("RTT:%s", formatRTT(target.LastRTT)), 12)
@@ -315,7 +315,7 @@ func flattenStyledText(parts []styledText, width int) []styledRune {
 	for _, part := range parts {
 		runes := []rune(part.text)
 		if used+len(runes) > width {
-			runes = runes[:maxInt(0, width-used)]
+			runes = runes[:max(0, width-used)]
 		}
 		result = append(result, styledRune{r: runes, style: part.style})
 		used += len(runes)
@@ -387,20 +387,6 @@ func statusStyle(status state.Status) tcell.Style {
 	default:
 		return tcell.StyleDefault.Foreground(tcell.ColorGray)
 	}
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func formatConfigInfo(cfg config.GlobalOptions) string {
