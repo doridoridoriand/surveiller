@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -189,11 +190,11 @@ func applyDirective(global *GlobalOptions, pairs map[string]string) error {
 				return fmt.Errorf("invalid metrics.mode %q (valid values: per-target, aggregated, both)", val)
 			}
 		case "metrics.listen":
-			if isDigits(val) {
-				global.MetricsListen = ":" + val
-			} else {
-				global.MetricsListen = val
+			listen := normalizeMetricsListen(val)
+			if err := validateMetricsListen(listen); err != nil {
+				return err
 			}
+			global.MetricsListen = listen
 		case "ui.scale":
 			n, err := strconv.Atoi(val)
 			if err != nil {
@@ -226,6 +227,9 @@ func validateGlobal(path string, global *GlobalOptions) error {
 	if global.UIScale <= 0 {
 		return &ConfigError{Path: path, Line: 0, Err: fmt.Errorf("ui.scale must be positive, got %d", global.UIScale)}
 	}
+	if err := validateMetricsListen(global.MetricsListen); err != nil {
+		return &ConfigError{Path: path, Line: 0, Err: err}
+	}
 	return nil
 }
 
@@ -256,15 +260,33 @@ func applyCLIOverrides(global *GlobalOptions, overrides CLIOverrides) {
 		global.MetricsMode = *overrides.MetricsMode
 	}
 	if overrides.MetricsListen != nil {
-		val := *overrides.MetricsListen
-		if isDigits(val) {
-			val = ":" + val
-		}
-		global.MetricsListen = val
+		global.MetricsListen = normalizeMetricsListen(*overrides.MetricsListen)
 	}
 	if overrides.UIDisable != nil {
 		global.UIDisable = *overrides.UIDisable
 	}
+}
+
+func normalizeMetricsListen(value string) string {
+	if isDigits(value) {
+		return ":" + value
+	}
+	return value
+}
+
+func validateMetricsListen(addr string) error {
+	if addr == "" {
+		return nil
+	}
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("invalid metrics.listen address %q: %w", addr, err)
+	}
+	portNum, err := strconv.Atoi(port)
+	if err != nil || portNum < 1 || portNum > 65535 {
+		return fmt.Errorf("invalid metrics.listen port %q in address %q", port, addr)
+	}
+	return nil
 }
 
 func isDigits(value string) bool {

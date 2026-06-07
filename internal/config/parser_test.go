@@ -104,6 +104,51 @@ func TestLoadConfigParsesDirectiveWithoutComment(t *testing.T) {
 	}
 }
 
+func TestLoadConfigRejectsInvalidMetricsListen(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+	}{
+		{name: "missing_port", value: "localhost"},
+		{name: "non_numeric_port", value: ":abc"},
+		{name: "zero_port", value: ":0"},
+		{name: "too_large_port", value: "localhost:99999"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configText := "surveiller: metrics.listen=" + tt.value + "\n" +
+				"example 192.0.2.1\n"
+			path := writeTempConfig(t, configText)
+
+			_, err := SurveillerParser{}.LoadConfig(path, CLIOverrides{})
+			if err == nil {
+				t.Fatal("expected invalid metrics.listen error")
+			}
+			if !strings.Contains(err.Error(), "metrics.listen") {
+				t.Fatalf("expected metrics.listen in error, got %q", err.Error())
+			}
+			if !strings.Contains(err.Error(), ":1:") {
+				t.Fatalf("expected directive line number in error, got %q", err.Error())
+			}
+		})
+	}
+}
+
+func TestLoadConfigRejectsInvalidMetricsListenOverride(t *testing.T) {
+	configText := "example 192.0.2.1\n"
+	path := writeTempConfig(t, configText)
+	listen := "localhost:99999"
+
+	_, err := SurveillerParser{}.LoadConfig(path, CLIOverrides{MetricsListen: &listen})
+	if err == nil {
+		t.Fatal("expected invalid metrics listen override error")
+	}
+	if !strings.Contains(err.Error(), "metrics.listen") {
+		t.Fatalf("expected metrics.listen in error, got %q", err.Error())
+	}
+}
+
 func TestLoadConfigIgnoresComments(t *testing.T) {
 	configText := "" +
 		"# normal comment\n" +

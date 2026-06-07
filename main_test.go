@@ -20,6 +20,12 @@ import (
 	"github.com/leanovate/gopter/prop"
 )
 
+func TestVersionDefaultIsDevel(t *testing.T) {
+	if version != "devel" {
+		t.Fatalf("expected default version devel, got %q", version)
+	}
+}
+
 // 6.1 アプリケーション初期化の単体テスト
 func TestBuildOverrides(t *testing.T) {
 	tests := []struct {
