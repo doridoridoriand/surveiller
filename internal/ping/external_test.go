@@ -196,7 +196,7 @@ func TestPingArgsVariousTimeouts(t *testing.T) {
 
 		// Verify basic structure
 		if len(args) < 5 {
-			t.Fatalf("expected at least 5 args for pingArgs(%q, %v), got %v", tc.addr, tc.timeout, args)
+			t.Fatalf("expected at least 5 args for pingArgsFor(%q, %v, false), got %v", tc.addr, tc.timeout, args)
 		}
 
 		// Verify address is included
@@ -274,7 +274,7 @@ func TestPingCommand(t *testing.T) {
 		for _, tc := range testCases {
 			result := pingCommandFor(tc.expected == "ping6")
 			if result != "ping" {
-				t.Fatalf("pingCommand(%q) = %q, expected %q on non-macOS", tc.addr, result, "ping")
+				t.Fatalf("pingCommandFor(%v) = %q, expected %q on non-macOS for %q", tc.expected == "ping6", result, "ping", tc.addr)
 			}
 		}
 		return
@@ -284,7 +284,7 @@ func TestPingCommand(t *testing.T) {
 	for _, tc := range testCases {
 		result := pingCommandFor(tc.expected == "ping6")
 		if result != tc.expected {
-			t.Fatalf("pingCommand(%q) = %q, expected %q", tc.addr, result, tc.expected)
+			t.Fatalf("pingCommandFor(%v) = %q, expected %q for %q", tc.expected == "ping6", result, tc.expected, tc.addr)
 		}
 	}
 }
