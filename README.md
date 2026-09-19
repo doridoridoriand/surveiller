@@ -250,6 +250,31 @@ surveiller uses four status levels to indicate target health:
   - 1-2 consecutive failures → **WARN**
   - 3+ consecutive failures → **DOWN**
 
+## Prometheus & Grafana
+
+surveiller exposes Prometheus metrics on an HTTP endpoint. Enable them with
+`metrics.mode` and `metrics.listen` (or `--metrics-mode` / `--metrics-listen`):
+
+```
+# surveiller: interval=1s timeout=1s metrics.mode=both metrics.listen=:9100
+```
+
+| Metric | Labels | Description |
+|---|---|---|
+| `surveiller_targets_total` | — | Total number of targets (aggregated mode) |
+| `surveiller_targets_ok` / `_warn` / `_down` / `_unknown` | — | Targets by status (aggregated mode) |
+| `surveiller_target_up` | `target`, `address`, `group` | `1` if OK, else `0` (per-target mode) |
+| `surveiller_target_rtt_ms` | `target`, `address`, `group` | Last RTT in ms, only when a ping succeeded (per-target mode) |
+
+`metrics.mode=both` (used in `example/surveiller.sample.conf`) emits both
+families. `per-target` leaves the aggregated stats out and vice versa.
+
+A ready-to-import Grafana dashboard is provided in
+[grafana/dashboards/surveiller.json](grafana/dashboards/surveiller.json)
+(see [grafana/README.md](grafana/README.md) for import and provisioning
+steps). Panels: status stat row, RTT time series per target, avg RTT per
+group, availability ranking, and status composition.
+
 ## Terminal UI
 
 The TUI displays the following information for each target:
@@ -307,6 +332,7 @@ make clean          # Clean build artifacts
 │   ├── state/      # Target state management
 │   └── ui/         # Terminal user interface
 ├── example/        # Sample configuration
+├── grafana/        # Grafana dashboard templates
 └── docs/           # Design documentation
 ```
 
@@ -336,7 +362,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## Roadmap
 
 - [ ] SSH relay support (`relay=` option)
-- [ ] Enhanced Grafana dashboard templates
+- [x] Grafana dashboard templates (see [grafana/](grafana/))
 - [ ] Additional monitoring protocols (HTTP, TCP)
 - [x] Configuration validation and better error messages
 - [ ] Improved macOS and Windows support (currently experimental)
