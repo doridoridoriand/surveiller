@@ -488,16 +488,17 @@
       "id": 8,
       "type": "barchart",
       "title": "RTT by target (avg over selected range, ms)",
-      "description": "avg_over_time over the dashboard's time range, sorted highest first.",
+      "description": "Instant query: avg_over_time over the dashboard's time range, sorted highest first (sort_desc in PromQL).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "targets": [
         {
-          "expr": "avg_over_time(surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"}[$__range])",
+          "expr": "sort_desc(avg_over_time(surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"}[$__range]))",
           "legendFormat": "{{target}}",
-          "refId": "A"
+          "refId": "A",
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -542,7 +543,6 @@
           "mode": "single",
           "sort": "desc"
         },
-        "sort": "descending",
         "xTickLabelRotation": 0,
         "xTickLabelSpacing": 0
       },

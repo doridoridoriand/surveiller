@@ -111,18 +111,21 @@ def panel_rtt_trend():
 
 def panel_rtt_barchart():
     """Per-target RTT as horizontal bars over the selected time range:
-    every bar is readable regardless of scale differences between targets."""
+    every bar is readable regardless of scale differences between targets.
+    Instant query at the range end (one avg_over_time value per target);
+    sort_desc in PromQL because the barchart panel has no sort option."""
     return {
         "id": pid(),
         "type": "barchart",
         "title": "RTT by target (avg over selected range, ms)",
-        "description": "avg_over_time over the dashboard's time range, sorted highest first.",
+        "description": "Instant query: avg_over_time over the dashboard's time range, sorted highest first (sort_desc in PromQL).",
         "datasource": DS,
         "targets": [
             {
-                "expr": 'avg_over_time(surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"}[$__range])',
+                "expr": 'sort_desc(avg_over_time(surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"}[$__range]))',
                 "legendFormat": "{{target}}",
                 "refId": "A",
+                "instant": True,
             }
         ],
         "fieldConfig": {
@@ -150,7 +153,6 @@ def panel_rtt_barchart():
             "showValue": "auto",
             "legend": {"displayMode": "list", "placement": "right", "showLegend": False},
             "tooltip": {"mode": "single", "sort": "desc"},
-            "sort": "descending",
             "xTickLabelRotation": 0,
             "xTickLabelSpacing": 0,
         },
