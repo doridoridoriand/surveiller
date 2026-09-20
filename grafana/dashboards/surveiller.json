@@ -377,25 +377,32 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "RTT by target (ms)",
+      "title": "RTT trend (all targets: max / avg)",
+      "description": "Aggregate lines over the selected window (per-target lines were squashed by scale differences, so per-target RTT moved to the bar chart below).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "targets": [
         {
-          "expr": "surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"}",
-          "legendFormat": "{{target}}",
+          "expr": "max(surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"})",
+          "legendFormat": "max (slowest)",
           "refId": "A"
+        },
+        {
+          "expr": "avg(surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"})",
+          "legendFormat": "avg",
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
+          "min": 0,
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 8,
+            "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": true,
             "pointSize": 5,
@@ -416,9 +423,40 @@
               }
             ]
           },
-          "decimals": 0
+          "decimals": 1
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max (slowest)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "color": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "avg"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "color": "blue"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -448,6 +486,75 @@
     },
     {
       "id": 8,
+      "type": "barchart",
+      "title": "RTT by target (avg over selected range, ms)",
+      "description": "Instant query: avg_over_time over the dashboard's time range, sorted highest first (sort_desc in PromQL).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(avg_over_time(surveiller_target_rtt_ms{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"}[$__range]))",
+          "legendFormat": "{{target}}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "fillOpacity": 90,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "fillSize": 1
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "id": 9,
       "type": "barchart",
       "title": "Avg RTT by group (current)",
       "datasource": {
@@ -507,12 +614,12 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 12
       }
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "barchart",
       "title": "Availability by target (up fraction, last 5m) — lowest first",
       "description": "Approximation: mean of the surveiller_target_up gauge over the window (no success/failure counters are exported yet).",
@@ -583,13 +690,13 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 12
+        "w": 24,
+        "x": 0,
+        "y": 20
       }
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "timeseries",
       "title": "Target status over time",
       "datasource": {
@@ -690,11 +797,11 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 28
       }
     },
     {
-      "id": 11,
+      "id": 12,
       "type": "timeseries",
       "title": "Status composition (stacked)",
       "datasource": {
@@ -773,7 +880,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 28
       }
     }
   ],

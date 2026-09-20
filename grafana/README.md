@@ -8,7 +8,10 @@ Prometheus metric set exported by `internal/metrics` (see
 
 - **`grafana/dashboards/surveiller.json`** — "Surveiller / Ping Monitor"
   - Stat row: total / OK / WARN / DOWN / UNKNOWN targets + overall up ratio
-  - RTT by target (ms) — time series, filtered by template vars
+  - RTT trend (all targets: max / avg) — time series; aggregated lines so a
+    single slow target can't squash the y-axis
+  - RTT by target (avg over selected range, ms) — horizontal bar chart,
+    per-target values stay readable regardless of scale differences
   - Avg RTT by group (current)
   - Availability by target (up fraction, last 5m) — lowest first
   - Target status over time / Status composition (stacked)

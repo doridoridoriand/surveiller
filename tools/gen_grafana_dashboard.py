@@ -57,26 +57,35 @@ def stat(title, expr, color, unit="short", decimals=0, thresholds=None, span=2):
     }
 
 
-def panel_ts_rtt():
+def panel_rtt_trend():
+    """Aggregate RTT trend: only a few series (max/avg), so one slow
+    target cannot squash the y-axis the way per-target lines do."""
     return {
         "id": pid(),
         "type": "timeseries",
-        "title": "RTT by target (ms)",
+        "title": "RTT trend (all targets: max / avg)",
+        "description": "Aggregate lines over the selected window (per-target lines were squashed by scale differences, so per-target RTT moved to the bar chart below).",
         "datasource": DS,
         "targets": [
             {
-                "expr": 'surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"}',
-                "legendFormat": "{{target}}",
+                "expr": 'max(surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"})',
+                "legendFormat": "max (slowest)",
                 "refId": "A",
-            }
+            },
+            {
+                "expr": 'avg(surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"})',
+                "legendFormat": "avg",
+                "refId": "B",
+            },
         ],
         "fieldConfig": {
             "defaults": {
                 "unit": "ms",
+                "min": 0,
                 "custom": {
                     "drawStyle": "line",
                     "lineWidth": 2,
-                    "fillOpacity": 8,
+                    "fillOpacity": 12,
                     "showPoints": "never",
                     "spanNulls": True,
                     "pointSize": 5,
@@ -85,14 +94,67 @@ def panel_ts_rtt():
                     "thresholdsStyle": {"mode": "off"},
                 },
                 "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}]},
-                "decimals": 0,
+                "decimals": 1,
             },
-            "overrides": [],
+            "overrides": [
+                {"matcher": {"id": "byName", "options": "max (slowest)"}, "properties": [{"id": "color", "value": {"mode": "fixed", "color": "orange"}}]},
+                {"matcher": {"id": "byName", "options": "avg"}, "properties": [{"id": "color", "value": {"mode": "fixed", "color": "blue"}}]},
+            ],
         },
         "options": {
             "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"], "showLegend": True},
             "tooltip": {"mode": "multi", "sort": "desc"},
             "tooltipOptions": {"sort": "desc"},
+        },
+    }
+
+
+def panel_rtt_barchart():
+    """Per-target RTT as horizontal bars over the selected time range:
+    every bar is readable regardless of scale differences between targets.
+    Instant query at the range end (one avg_over_time value per target);
+    sort_desc in PromQL because the barchart panel has no sort option."""
+    return {
+        "id": pid(),
+        "type": "barchart",
+        "title": "RTT by target (avg over selected range, ms)",
+        "description": "Instant query: avg_over_time over the dashboard's time range, sorted highest first (sort_desc in PromQL).",
+        "datasource": DS,
+        "targets": [
+            {
+                "expr": 'sort_desc(avg_over_time(surveiller_target_rtt_ms{instance=~"${instance}", target=~"${target}", group=~"${group}"}[$__range]))',
+                "legendFormat": "{{target}}",
+                "refId": "A",
+                "instant": True,
+            }
+        ],
+        "fieldConfig": {
+            "defaults": {
+                "unit": "ms",
+                "min": 0,
+                "color": {"mode": "palette-classic"},
+                "custom": {
+                    "axisPlacement": "auto",
+                    "fillOpacity": 90,
+                    "gradientMode": "none",
+                    "lineWidth": 1,
+                    "fillSize": 1,
+                },
+                "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}]},
+                "decimals": 1,
+            },
+            "overrides": [],
+        },
+        "options": {
+            "orientation": "horizontal",
+            "barRadius": 0.1,
+            "barWidth": 0.8,
+            "groupWidth": 0.7,
+            "showValue": "auto",
+            "legend": {"displayMode": "list", "placement": "right", "showLegend": False},
+            "tooltip": {"mode": "single", "sort": "desc"},
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0,
         },
     }
 
@@ -291,7 +353,8 @@ panels = [
     stat("Targets UNKNOWN", expr_agg("surveiller_targets_unknown"), "purple"),
     stat("Up ratio", "sum(surveiller_target_up{instance=~\"${instance}\", target=~\"${target}\", group=~\"${group}\"}) / sum(surveiller_targets_total)", "green", unit="percentunit", decimals=1,
          thresholds=[{"color": "red", "value": None}, {"color": "orange", "value": 0.9}, {"color": "green", "value": 1}]),
-    panel_ts_rtt(),
+    panel_rtt_trend(),
+    panel_rtt_barchart(),
     panel_group_rtt(),
     panel_availability(),
     panel_status_timeseries(),
@@ -303,11 +366,12 @@ x = 0
 for p in panels[:6]:
     p["gridPos"] = {"h": 4, "w": 4, "x": x, "y": 0}
     x += 4
-panels[6]["gridPos"] = {"h": 8, "w": 24, "x": 0, "y": 4}  # rtt timeseries
-panels[7]["gridPos"] = {"h": 8, "w": 12, "x": 0, "y": 12}  # group rtt
-panels[8]["gridPos"] = {"h": 8, "w": 12, "x": 12, "y": 12}  # availability
-panels[9]["gridPos"] = {"h": 8, "w": 12, "x": 0, "y": 20}  # status timeseries
-panels[10]["gridPos"] = {"h": 8, "w": 12, "x": 12, "y": 20}  # status stacked
+panels[6]["gridPos"] = {"h": 8, "w": 24, "x": 0, "y": 4}   # rtt trend (max/avg)
+panels[7]["gridPos"] = {"h": 8, "w": 12, "x": 0, "y": 12}  # rtt barchart per target
+panels[8]["gridPos"] = {"h": 8, "w": 12, "x": 12, "y": 12} # group rtt
+panels[9]["gridPos"] = {"h": 8, "w": 24, "x": 0, "y": 20}  # availability
+panels[10]["gridPos"] = {"h": 8, "w": 12, "x": 0, "y": 28} # status timeseries
+panels[11]["gridPos"] = {"h": 8, "w": 12, "x": 12, "y": 28}  # status stacked
 
 dashboard = {
     "annotations": {"list": []},
