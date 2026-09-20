@@ -272,8 +272,8 @@ families. `per-target` leaves the aggregated stats out and vice versa.
 A ready-to-import Grafana dashboard is provided in
 [grafana/dashboards/surveiller.json](grafana/dashboards/surveiller.json)
 (see [grafana/README.md](grafana/README.md) for import and provisioning
-steps). Panels: status stat row, RTT time series per target, avg RTT per
-group, availability ranking, and status composition.
+steps). Panels: status stat row, RTT trend (max/avg) + per-target RTT bar
+chart, avg RTT per group, availability ranking, and status composition.
 
 ## Terminal UI
 
